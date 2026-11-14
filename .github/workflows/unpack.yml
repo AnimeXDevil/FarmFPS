@@ -1,0 +1,57 @@
+# .github/workflows/unpack.yml
+# Upload a .zip to the ROOT of the repo (GitHub web UI: Add file -> Upload files).
+# This workflow unzips it into the repo, deletes the zip, and commits the result.
+name: Unpack zip
+
+on:
+  push:
+    paths:
+      - '*.zip'            # any .zip in the repo root
+  workflow_dispatch:       # also lets you run it manually from the Actions tab
+
+permissions:
+  contents: write          # needed so the workflow can push the unpacked files
+
+concurrency:
+  group: unpack-zip
+  cancel-in-progress: false
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack every root-level zip, then delete it
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          zips=(*.zip)
+          if [ ${#zips[@]} -eq 0 ]; then echo "No zip in repo root, nothing to do"; exit 0; fi
+
+          for z in "${zips[@]}"; do
+            echo "Unpacking $z"
+            tmp="$(mktemp -d)"
+            unzip -q "$z" -x "__MACOSX/*" "*.DS_Store" "*/.DS_Store" -d "$tmp"
+
+            # If the zip wraps everything in one top-level folder, unwrap it
+            # so files land in the repo root (not repo/folder/...).
+            entries=("$tmp"/*)
+            if [ ${#entries[@]} -eq 1 ] && [ -d "${entries[0]}" ]; then src="${entries[0]}"; else src="$tmp"; fi
+
+            # Never overwrite workflow files (GITHUB_TOKEN may not push those) or .git
+            rm -rf "$src/.github" "$src/.git"
+
+            # Copy into repo root, overwriting existing files
+            cp -a "$src"/. .
+            rm -rf "$tmp"
+            git rm -q --cached -- "$z" 2>/dev/null || true
+            rm -f -- "$z"
+          done
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Unpack zip and remove it [skip ci]" || echo "Nothing to commit"
+          git push
+          
