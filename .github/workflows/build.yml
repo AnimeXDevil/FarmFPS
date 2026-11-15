@@ -1,6 +1,10 @@
-# Builds on every push / PR, and publishes a GitHub Release (with the jar attached) on pushes
-# to the default branch. Also runs automatically after the "Unpack zip" workflow, because
-# commits pushed by GITHUB_TOKEN do not trigger normal push workflows.
+# Builds on every push / PR. On the default branch it publishes the jar to ONE rolling
+# pre-release called "dev-builds", named farmfps-<version>-build-<n>.jar, so there is never
+# more than one release entry. Old per-build releases (tags like v1.0.0-build.3) are moved
+# into it automatically and then removed.
+#
+# Also runs after the "Unpack zip" workflow, because commits pushed by GITHUB_TOKEN do not
+# trigger normal push workflows.
 
 name: build
 on:
@@ -13,6 +17,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: farmfps-build-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -40,16 +48,45 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
-      - name: publish github release
+      - name: publish to the rolling dev-builds release
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          TAG="dev-builds"
           VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
-          TAG="v${VERSION}-build.${{ github.run_number }}"
-          JAR=$(ls build/libs/*.jar | grep -v -- '-sources' | head -n 1)
-          gh release create "$TAG" "$JAR" \
-            --title "FarmFPS ${VERSION} (build ${{ github.run_number }})" \
-            --generate-notes \
-            --target "$GITHUB_SHA"
+          NAME="farmfps-${VERSION}-build-${{ github.run_number }}.jar"
+          SRC=$(ls build/libs/*.jar | grep -v -- '-sources' | head -n 1)
+          cp "$SRC" "$NAME"
+
+          # Create the single rolling pre-release once.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --prerelease --latest=false \
+              --title "FarmFPS dev builds (beta)" \
+              --notes "Rolling beta builds. Every build adds one jar named farmfps-<version>-build-<n>.jar; the highest number is the newest." \
+              --target "$GITHUB_SHA"
+          fi
+
+          gh release upload "$TAG" "$NAME" --clobber
+          gh release edit "$TAG" --prerelease --latest=false \
+            --notes "Rolling beta builds. Every build adds one jar named farmfps-<version>-build-<n>.jar; the highest number is the newest.
+
+          Newest: ${NAME} (commit ${GITHUB_SHA::7})"
+
+          # One-time cleanup: move old per-build releases (v1.0.0-build.3 ...) into dev-builds
+          # as farmfps-1.0.0-build-3.jar, then delete the old release and its tag.
+          # Nothing is deleted unless its jar was uploaded successfully first.
+          for old in $(gh release list --limit 200 --json tagName --jq '.[].tagName' | grep -E '^v.+-build\.[0-9]+$' || true); do
+            ver="${old#v}"; ver="${ver%-build.*}"; num="${old##*-build.}"
+            dir=$(mktemp -d)
+            gh release download "$old" --dir "$dir" --pattern '*.jar'
+            jar=$(ls "$dir"/*.jar | grep -v -- '-sources' | head -n 1)
+            moved="$dir/farmfps-${ver}-build-${num}.jar"
+            cp "$jar" "$moved"
+            gh release upload "$TAG" "$moved" --clobber
+            gh release delete "$old" --cleanup-tag --yes
+            echo "Moved $old -> $(basename "$moved")"
+          done
