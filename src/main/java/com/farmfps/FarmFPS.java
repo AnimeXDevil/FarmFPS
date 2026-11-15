@@ -1,6 +1,7 @@
 package com.farmfps;
 
 import com.farmfps.client.ClientTicker;
+import com.farmfps.client.VisualLock;
 import com.farmfps.client.gui.ConfigScreen;
 import com.farmfps.core.EntityBudget;
 import com.farmfps.core.FarmConfig;
@@ -82,6 +83,10 @@ public class FarmFPS implements ClientModInitializer {
                             say(ctx, "Rendering up to " + FarmConfig.INSTANCE.maxItems + " dropped items");
                             return 1;
                         })))
+                .then(ClientCommandManager.literal("preset")
+                    .then(ClientCommandManager.literal("balanced").executes(ctx -> applyPreset(ctx, 0)))
+                    .then(ClientCommandManager.literal("megafarm").executes(ctx -> applyPreset(ctx, 1)))
+                    .then(ClientCommandManager.literal("potato").executes(ctx -> applyPreset(ctx, 2))))
                 .then(ClientCommandManager.literal("stats").executes(ctx -> {
                     FarmConfig c = FarmConfig.INSTANCE;
                     say(ctx, "FarmFPS " + (c.enabled ? "ON" : "OFF") + " | active farm chunks: " + FarmDetector.activeCount());
@@ -90,6 +95,8 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "Item spawns dropped: " + Stats.spawnsDropped + " | hidden item ticks skipped: " + Stats.itemTicksSkipped);
                     say(ctx, "Item/XP draws hidden: " + Stats.rendersHidden + " | piston snaps: " + Stats.pistonSnaps);
                     say(ctx, "Particles hidden: " + Stats.particlesHidden + " | sounds muted: " + Stats.soundsMuted);
+                    say(ctx, "Redstone updates held back: " + Stats.redstoneHeld + " (waiting now: " + VisualLock.pendingCount()
+                        + ") | block entities culled: " + Stats.blockEntitiesCulled);
                     say(ctx, "A counter stuck at 0 during a farm means that hook did not apply on this version.");
                     return 1;
                 }))
@@ -102,6 +109,13 @@ public class FarmFPS implements ClientModInitializer {
         );
 
         LOGGER.info("FarmFPS initialized");
+    }
+
+    private static int applyPreset(CommandContext<FabricClientCommandSource> ctx, int preset) {
+        FarmConfig.INSTANCE.applyPreset(preset);
+        saveConfig();
+        say(ctx, "Preset applied: " + FarmConfig.PRESET_NAMES[FarmConfig.INSTANCE.preset]);
+        return 1;
     }
 
     private static void say(CommandContext<FabricClientCommandSource> ctx, String message) {

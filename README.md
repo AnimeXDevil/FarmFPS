@@ -9,6 +9,9 @@ Client-side farm lag fix for Minecraft 1.21.11 (Fabric). Install it on any serve
 | Hidden item skip | Items that are over the cap but already exist are not drawn and not simulated. |
 | XP orb cap | Excess XP orbs near you are not drawn. |
 | Farm particles and sounds | Inside a detected farm chunk, particles are hidden and the same sound plays at most once per tick. Elsewhere, per-tick budgets apply. |
+| Redstone visual lock | In farm chunks, rapid visual-only flips of observers, redstone dust, repeaters, comparators, lamps, copper bulbs and powered rails are held back; only the latest state per block is applied every few ticks. Cuts chunk rebuilds without ghost blocks. |
+| Redstone sounds | In farm chunks, note block, dispenser, piston, comparator, gate and trapdoor sounds are muted. |
+| Far block culling | In farm chunks, block entities (chests, hoppers, signs, moving pistons) beyond a set distance are not drawn. |
 | Farm detector | Scores each chunk from piston movement, block-entity updates and particles. A single piston door or lamp never reaches the threshold. |
 
 ## Commands
@@ -19,6 +22,7 @@ Client-side farm lag fix for Minecraft 1.21.11 (Fabric). Install it on any serve
 | `/farmfps on` / `off` | Turns FarmFPS on or off for you |
 | `/farmfps particles [hide\|show]` | Hides or shows farm particles and sounds (no argument toggles) |
 | `/farmfps items <10-2000>` | How many dropped items to keep near you |
+| `/farmfps preset balanced\|megafarm\|potato` | Applies a set of limits |
 | `/farmfps stats` | Live counters. A counter stuck at 0 during a farm means that hook did not apply |
 | `/farmfps reload` | Reloads `config/farmfps.json` |
 

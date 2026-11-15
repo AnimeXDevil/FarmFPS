@@ -14,6 +14,7 @@ public final class FarmDetector {
     public static final int WEIGHT_PISTON = 3;
     public static final int WEIGHT_BLOCK_ENTITY = 2;
     public static final int WEIGHT_PARTICLE = 1;
+    public static final int WEIGHT_BLOCK_UPDATE = 1;
 
     private static final int SIZE = 512; // power of two
     private static final int SHIFT = 32 - 9; // top 9 bits of the mixed hash

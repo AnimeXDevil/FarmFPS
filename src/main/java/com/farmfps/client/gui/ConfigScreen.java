@@ -13,15 +13,23 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
- * Settings screen: two columns of large toggles and sliders, no hover or keyboard needed,
- * so it works with touch controls. Opens from Mod Menu (if installed) or with /farmfps.
+ * Two-page settings screen with large toggles and sliders, no hover or keyboard needed, so it
+ * works with touch controls. Opens from Mod Menu (if installed) or with /farmfps.
  */
 public class ConfigScreen extends Screen {
+    private static final int PAGES = 2;
+
     private final Screen parent;
+    private final int page;
 
     public ConfigScreen(Screen parent) {
+        this(parent, 0);
+    }
+
+    private ConfigScreen(Screen parent, int page) {
         super(Text.literal("FarmFPS Settings"));
         this.parent = parent;
+        this.page = page;
     }
 
     @Override
@@ -32,40 +40,64 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = 8; // 3 toggle rows + 3 slider rows + extra toggle row + Done
+        int rows = this.page == 0 ? 5 : 7;
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
 
-        int titleW = this.textRenderer.getWidth(this.title);
-        addDrawableChild(new TextWidget((this.width - titleW) / 2, 10, titleW, 9, this.title, this.textRenderer));
+        Text heading = Text.literal("FarmFPS Settings  (" + (this.page + 1) + "/" + PAGES + ")");
+        int titleW = this.textRenderer.getWidth(heading);
+        addDrawableChild(new TextWidget((this.width - titleW) / 2, 10, titleW, 9, heading, this.textRenderer));
 
-        toggle(left, y, colW, rowH, "Mod", () -> c.enabled, v -> c.enabled = v);
-        toggle(right, y, colW, rowH, "Piston snap", () -> c.pistonSnap, v -> c.pistonSnap = v);
-        y += step;
-        toggle(left, y, colW, rowH, "Cap items", () -> c.capItems, v -> c.capItems = v);
-        toggle(right, y, colW, rowH, "Cap XP orbs", () -> c.capXpOrbs, v -> c.capXpOrbs = v);
-        y += step;
-        toggle(left, y, colW, rowH, "Drop extra items", () -> c.aggressiveItems, v -> c.aggressiveItems = v);
-        toggle(right, y, colW, rowH, "Hide farm fx", () -> c.hideFarmEffects, v -> c.hideFarmEffects = v);
-        y += step;
-        toggle(left, y, colW, rowH, "Fx budgets", () -> c.throttleParticles && c.throttleSounds,
-            v -> { c.throttleParticles = v; c.throttleSounds = v; });
-        toggle(right, y, colW, rowH, "Action bar", () -> c.actionBar, v -> c.actionBar = v);
-        y += step;
-
-        slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);
-        slider(right, y, colW, rowH, "Max XP orbs", 10, 1000, c.maxXpOrbs, v -> c.maxXpOrbs = v);
-        y += step;
-        slider(left, y, colW, rowH, "Radius", 8, 128, c.cullRadius, v -> c.cullRadius = v);
-        slider(right, y, colW, rowH, "Particles/tick", 20, 2000, c.maxParticlesPerTick, v -> c.maxParticlesPerTick = v);
-        y += step;
-        slider(left, y, colW, rowH, "Same sound/tick", 1, 10, c.maxSameSoundPerTick, v -> c.maxSameSoundPerTick = v);
-        slider(right, y, colW, rowH, "Farm trigger", 5, 200, c.farmSensitivity, v -> c.farmSensitivity = v);
-        y += step;
+        if (this.page == 0) {
+            toggle(left, y, colW, rowH, "Mod", () -> c.enabled, v -> c.enabled = v);
+            toggle(right, y, colW, rowH, "Piston snap", () -> c.pistonSnap, v -> c.pistonSnap = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Cap items", () -> c.capItems, v -> c.capItems = v);
+            toggle(right, y, colW, rowH, "Cap XP orbs", () -> c.capXpOrbs, v -> c.capXpOrbs = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Drop extra items", () -> c.aggressiveItems, v -> c.aggressiveItems = v);
+            toggle(right, y, colW, rowH, "Hide farm fx", () -> c.hideFarmEffects, v -> c.hideFarmEffects = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Fx budgets", () -> c.throttleParticles && c.throttleSounds,
+                v -> { c.throttleParticles = v; c.throttleSounds = v; });
+            addDrawableChild(ButtonWidget.builder(presetText(c), b -> {
+                c.applyPreset((c.preset + 1) % FarmConfig.PRESET_NAMES.length);
+                b.setMessage(presetText(c));
+            }).dimensions(right, y, colW, rowH).build());
+            y += step;
+        } else {
+            toggle(left, y, colW, rowH, "Redstone lock", () -> c.redstoneLock, v -> c.redstoneLock = v);
+            toggle(right, y, colW, rowH, "Redstone sounds", () -> c.muteRedstoneSounds, v -> c.muteRedstoneSounds = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Cull far blocks", () -> c.blockEntityCull, v -> c.blockEntityCull = v);
+            toggle(right, y, colW, rowH, "Action bar", () -> c.actionBar, v -> c.actionBar = v);
+            y += step;
+            slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);
+            slider(right, y, colW, rowH, "Max XP orbs", 10, 1000, c.maxXpOrbs, v -> c.maxXpOrbs = v);
+            y += step;
+            slider(left, y, colW, rowH, "Radius", 8, 128, c.cullRadius, v -> c.cullRadius = v);
+            slider(right, y, colW, rowH, "Particles/tick", 20, 2000, c.maxParticlesPerTick, v -> c.maxParticlesPerTick = v);
+            y += step;
+            slider(left, y, colW, rowH, "Same sound/tick", 1, 10, c.maxSameSoundPerTick, v -> c.maxSameSoundPerTick = v);
+            slider(right, y, colW, rowH, "Farm trigger", 5, 200, c.farmSensitivity, v -> c.farmSensitivity = v);
+            y += step;
+            slider(left, y, colW, rowH, "Redstone ticks", 2, 20, c.redstoneFlushTicks, v -> c.redstoneFlushTicks = v);
+            slider(right, y, colW, rowH, "Far block dist", 8, 96, c.blockEntityDistance, v -> c.blockEntityDistance = v);
+            y += step;
+        }
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Done"), b -> this.close())
-            .dimensions(left, y, colW * 2 + gap, rowH).build());
+            .dimensions(left, y, colW, rowH).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal("More settings >"), b -> {
+            if (this.client != null) {
+                this.client.setScreen(new ConfigScreen(this.parent, (this.page + 1) % PAGES));
+            }
+        }).dimensions(right, y, colW, rowH).build());
+    }
+
+    private static Text presetText(FarmConfig c) {
+        return Text.literal("Preset: " + FarmConfig.PRESET_NAMES[c.preset]);
     }
 
     private void toggle(int x, int y, int w, int h, String name, BooleanSupplier get, Consumer<Boolean> set) {

@@ -34,4 +34,14 @@ public final class EffectCounters {
         int slot = (soundIdHash * 0x9E3779B1) >>> SOUND_SHIFT;
         return ++SOUNDS[slot] <= limit;
     }
+
+    /** Sound families that redstone farms spam. Muted entirely inside detected farm chunks. */
+    public static boolean isRedstoneNoise(String path) {
+        return path.startsWith("block.note_block.")
+            || path.startsWith("block.dispenser.")
+            || path.startsWith("block.piston.")
+            || path.startsWith("block.comparator.")
+            || path.startsWith("block.fence_gate.")
+            || path.contains("trapdoor.");
+    }
 }

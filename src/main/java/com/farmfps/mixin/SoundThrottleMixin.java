@@ -35,6 +35,11 @@ public abstract class SoundThrottleMixin {
         if (!farm && !c.throttleSounds) {
             return;
         }
+        if (farm && c.muteRedstoneSounds && EffectCounters.isRedstoneNoise(sound.getId().getPath())) {
+            Stats.soundsMuted++;
+            cir.setReturnValue(SoundSystem.PlayResult.NOT_STARTED);
+            return;
+        }
         int limit = farm ? 1 : c.maxSameSoundPerTick;
         if (!EffectCounters.allowSound(sound.getId().hashCode(), limit)) {
             Stats.soundsMuted++;

@@ -23,6 +23,7 @@ public final class ClientTicker {
     private static final int STATUS_INTERVAL_TICKS = 10;   // action bar refresh
     private static int scanTicks;
     private static int statusTicks;
+    private static int lockTicks;
     private static long lastStatsTotal;
 
     private ClientTicker() {
@@ -40,15 +41,25 @@ public final class ClientTicker {
         if (world == null || player == null) {
             EntityBudget.reset();
             FarmDetector.clear();
+            VisualLock.clear();
+            lockTicks = 0;
             scanTicks = 0;
             statusTicks = 0;
             return;
         }
 
         FarmConfig c = FarmConfig.INSTANCE;
+        if (!c.enabled || !c.redstoneLock) {
+            VisualLock.flush(world); // never leave held-back states behind
+        }
         if (!c.enabled) {
             EntityBudget.reset();
             return;
+        }
+
+        if (++lockTicks >= c.redstoneFlushTicks) {
+            lockTicks = 0;
+            VisualLock.flush(world);
         }
 
         if (++scanTicks >= SCAN_INTERVAL_TICKS) {
@@ -90,7 +101,8 @@ public final class ClientTicker {
         if (busy) {
             player.sendMessage(Text.literal("FarmFPS | items " + EntityBudget.itemsNear + "/" + c.maxItems
                 + " | blocked: " + Stats.spawnsDropped + " items, "
-                + Stats.particlesHidden + " particles, " + Stats.soundsMuted + " sounds"), true);
+                + Stats.particlesHidden + " particles, " + Stats.soundsMuted + " sounds"
+                + " | redstone held " + Stats.redstoneHeld), true);
         }
     }
 }
