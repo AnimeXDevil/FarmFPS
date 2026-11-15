@@ -30,8 +30,8 @@ public final class EffectCounters {
      * Returns true while fewer than the allowed number of identical sounds played this tick.
      * Different sound ids can share a slot; that only makes throttling slightly stricter.
      */
-    public static boolean allowSound(int soundIdHash) {
+    public static boolean allowSound(int soundIdHash, int limit) {
         int slot = (soundIdHash * 0x9E3779B1) >>> SOUND_SHIFT;
-        return ++SOUNDS[slot] <= FarmConfig.INSTANCE.maxSameSoundPerTick;
+        return ++SOUNDS[slot] <= limit;
     }
 }

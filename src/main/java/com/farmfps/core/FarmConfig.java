@@ -25,9 +25,12 @@ public final class FarmConfig {
     public boolean capXpOrbs = true;
     public boolean throttleParticles = true;
     public boolean throttleSounds = true;
+    public boolean aggressiveItems = true;   // drop item spawns over the cap and skip ticking hidden items
+    public boolean hideFarmEffects = true;   // hide particles and matching sounds in detected farm chunks
+    public boolean actionBar = true;         // live status message while optimizing
 
     // Limits
-    public int maxItems = 150;            // rendered dropped items inside cullRadius
+    public int maxItems = 200;            // rendered dropped items inside cullRadius
     public int maxXpOrbs = 60;            // rendered XP orbs inside cullRadius
     public int cullRadius = 48;           // blocks around the camera
     public int maxParticlesPerTick = 250; // particles accepted per client tick
@@ -57,6 +60,9 @@ public final class FarmConfig {
         capXpOrbs = o.capXpOrbs;
         throttleParticles = o.throttleParticles;
         throttleSounds = o.throttleSounds;
+        aggressiveItems = o.aggressiveItems;
+        hideFarmEffects = o.hideFarmEffects;
+        actionBar = o.actionBar;
         maxItems = o.maxItems;
         maxXpOrbs = o.maxXpOrbs;
         cullRadius = o.cullRadius;

@@ -32,7 +32,7 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = 7; // 6 settings rows + Done
+        int rows = 8; // 3 toggle rows + 3 slider rows + extra toggle row + Done
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
@@ -40,14 +40,18 @@ public class ConfigScreen extends Screen {
         int titleW = this.textRenderer.getWidth(this.title);
         addDrawableChild(new TextWidget((this.width - titleW) / 2, 10, titleW, 9, this.title, this.textRenderer));
 
-        toggle(left, y, colW, rowH, "Mod enabled", () -> c.enabled, v -> c.enabled = v);
+        toggle(left, y, colW, rowH, "Mod", () -> c.enabled, v -> c.enabled = v);
         toggle(right, y, colW, rowH, "Piston snap", () -> c.pistonSnap, v -> c.pistonSnap = v);
         y += step;
         toggle(left, y, colW, rowH, "Cap items", () -> c.capItems, v -> c.capItems = v);
         toggle(right, y, colW, rowH, "Cap XP orbs", () -> c.capXpOrbs, v -> c.capXpOrbs = v);
         y += step;
-        toggle(left, y, colW, rowH, "Particles", () -> c.throttleParticles, v -> c.throttleParticles = v);
-        toggle(right, y, colW, rowH, "Sounds", () -> c.throttleSounds, v -> c.throttleSounds = v);
+        toggle(left, y, colW, rowH, "Drop extra items", () -> c.aggressiveItems, v -> c.aggressiveItems = v);
+        toggle(right, y, colW, rowH, "Hide farm fx", () -> c.hideFarmEffects, v -> c.hideFarmEffects = v);
+        y += step;
+        toggle(left, y, colW, rowH, "Fx budgets", () -> c.throttleParticles && c.throttleSounds,
+            v -> { c.throttleParticles = v; c.throttleSounds = v; });
+        toggle(right, y, colW, rowH, "Action bar", () -> c.actionBar, v -> c.actionBar = v);
         y += step;
 
         slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);

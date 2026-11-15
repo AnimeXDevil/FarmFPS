@@ -5,8 +5,11 @@
   "client": [
     "BlockEntityUpdateMixin",
     "EntityCullMixin",
+    "ItemSpawnMixin",
+    "ItemTickMixin",
     "ParticleThrottleMixin",
-    "PistonCullMixin"
+    "PistonCullMixin",
+    "SoundThrottleMixin"
   ],
   "injectors": {
     "defaultRequire": 0

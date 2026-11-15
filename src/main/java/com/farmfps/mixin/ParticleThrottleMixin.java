@@ -3,6 +3,7 @@ package com.farmfps.mixin;
 import com.farmfps.core.EffectCounters;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
+import com.farmfps.core.Stats;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.particle.ParticleEffect;
@@ -12,9 +13,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Counts particles per chunk for the farm detector and drops particles once the per-tick budget is
- * spent. Vanilla already returns null here when its own particle limit is reached, so callers
- * handle a null result.
+ * Feeds the farm detector and hides particles: all of them inside a chunk detected as an active
+ * farm (when "farm effects" is on), plus anything over the per-tick budget elsewhere.
+ * Vanilla already returns null here when its own particle limit is hit, so callers handle null.
  */
 @Mixin(ParticleManager.class)
 public abstract class ParticleThrottleMixin {
@@ -31,8 +32,12 @@ public abstract class ParticleThrottleMixin {
         if (!c.enabled) {
             return;
         }
-        FarmDetector.record(((int) Math.floor(x)) >> 4, ((int) Math.floor(z)) >> 4, FarmDetector.WEIGHT_PARTICLE);
-        if (c.throttleParticles && !EffectCounters.allowParticle()) {
+        int cx = ((int) Math.floor(x)) >> 4;
+        int cz = ((int) Math.floor(z)) >> 4;
+        FarmDetector.record(cx, cz, FarmDetector.WEIGHT_PARTICLE);
+        if ((c.hideFarmEffects && FarmDetector.isActive(cx, cz))
+            || (c.throttleParticles && !EffectCounters.allowParticle())) {
+            Stats.particlesHidden++;
             cir.setReturnValue(null);
         }
     }

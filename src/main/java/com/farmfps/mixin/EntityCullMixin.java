@@ -1,7 +1,7 @@
 package com.farmfps.mixin;
 
 import com.farmfps.core.EntityBudget;
-import com.farmfps.core.FarmConfig;
+import com.farmfps.core.Stats;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.entity.Entity;
@@ -13,16 +13,18 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Caps visible dropped items and XP orbs.
- *
- * Hooks the shared {@code shouldRender} visibility check, which every entity renderer goes through,
- * instead of the item/XP renderers' render methods (those signatures differ by version).
- * Hidden entities still exist and tick normally, so hoppers, collection and despawn are unaffected.
+ * Hides excess dropped items and XP orbs that already exist on the client. Hooks the shared
+ * {@code shouldRender} check, which every entity renderer goes through. Hidden entities keep
+ * existing; they are just not drawn.
  */
 @Mixin(EntityRenderer.class)
 public abstract class EntityCullMixin {
 
-    @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
+    @Inject(
+        method = "shouldRender(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/render/Frustum;DDD)Z",
+        at = @At("HEAD"),
+        cancellable = true
+    )
     private void farmfps$cap(Entity entity, Frustum frustum, double x, double y, double z,
                              CallbackInfoReturnable<Boolean> cir) {
         int keep;
@@ -36,11 +38,9 @@ public abstract class EntityCullMixin {
         if (keep >= EntityBudget.FULL) {
             return;
         }
-        double dx = entity.getX() - x;
-        double dy = entity.getY() - y;
-        double dz = entity.getZ() - z;
-        double r = FarmConfig.INSTANCE.cullRadius;
-        if (dx * dx + dy * dy + dz * dz <= r * r && EntityBudget.isHidden(entity.getId(), keep)) {
+        if (EntityBudget.isHidden(entity.getId(), keep)
+            && EntityBudget.inRange(entity.getX(), entity.getY(), entity.getZ())) {
+            Stats.rendersHidden++;
             cir.setReturnValue(Boolean.FALSE);
         }
     }

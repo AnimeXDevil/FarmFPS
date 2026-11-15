@@ -56,6 +56,17 @@ public final class FarmDetector {
         return KEYS[i] == k && SCORES[i] >= FarmConfig.INSTANCE.farmSensitivity;
     }
 
+    public static int activeCount() {
+        int n = 0;
+        int threshold = FarmConfig.INSTANCE.farmSensitivity;
+        for (int i = 0; i < SIZE; i++) {
+            if (SCORES[i] >= threshold) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     /** Call once per client tick. Exponential decay, roughly 12% per tick plus 1. */
     public static void tick() {
         for (int i = 0; i < SIZE; i++) {

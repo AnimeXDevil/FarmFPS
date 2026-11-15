@@ -16,7 +16,10 @@ public abstract class BlockEntityUpdateMixin {
 
     // RETURN, not HEAD: the handler throws on the network thread and re-runs on the client thread,
     // so RETURN fires exactly once, on the client thread.
-    @Inject(method = "onBlockEntityUpdate", at = @At("RETURN"))
+    @Inject(
+        method = "onBlockEntityUpdate(Lnet/minecraft/network/packet/s2c/play/BlockEntityUpdateS2CPacket;)V",
+        at = @At("RETURN")
+    )
     private void farmfps$trackBlockEntity(BlockEntityUpdateS2CPacket packet, CallbackInfo ci) {
         if (FarmConfig.INSTANCE.enabled) {
             BlockPos pos = packet.getPos();

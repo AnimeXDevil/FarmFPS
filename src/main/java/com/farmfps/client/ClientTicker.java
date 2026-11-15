@@ -4,12 +4,14 @@ import com.farmfps.core.EffectCounters;
 import com.farmfps.core.EntityBudget;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
+import com.farmfps.core.Stats;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.text.Text;
 
 /**
  * Per-tick glue between Minecraft and the version-independent core.
@@ -17,8 +19,11 @@ import net.minecraft.entity.ItemEntity;
  * The render-path mixins only read the primitive results.
  */
 public final class ClientTicker {
-    private static final int SCAN_INTERVAL_TICKS = 5; // 4 scans per second
-    private static int ticks;
+    private static final int SCAN_INTERVAL_TICKS = 5;      // 4 scans per second
+    private static final int STATUS_INTERVAL_TICKS = 10;   // action bar refresh
+    private static int scanTicks;
+    private static int statusTicks;
+    private static long lastStatsTotal;
 
     private ClientTicker() {
     }
@@ -35,7 +40,8 @@ public final class ClientTicker {
         if (world == null || player == null) {
             EntityBudget.reset();
             FarmDetector.clear();
-            ticks = 0;
+            scanTicks = 0;
+            statusTicks = 0;
             return;
         }
 
@@ -45,11 +51,18 @@ public final class ClientTicker {
             return;
         }
 
-        if (++ticks < SCAN_INTERVAL_TICKS) {
-            return;
+        if (++scanTicks >= SCAN_INTERVAL_TICKS) {
+            scanTicks = 0;
+            scan(world, player, c);
         }
-        ticks = 0;
 
+        if (c.actionBar && ++statusTicks >= STATUS_INTERVAL_TICKS) {
+            statusTicks = 0;
+            showStatus(player, c);
+        }
+    }
+
+    private static void scan(ClientWorld world, ClientPlayerEntity player, FarmConfig c) {
         double r = c.cullRadius;
         double r2 = r * r;
         int items = 0;
@@ -65,6 +78,19 @@ public final class ClientTicker {
                 }
             }
         }
-        EntityBudget.update(items, xp);
+        EntityBudget.update(items, xp, player.getX(), player.getY(), player.getZ());
+    }
+
+    private static void showStatus(ClientPlayerEntity player, FarmConfig c) {
+        long total = Stats.total();
+        boolean busy = total != lastStatsTotal
+            || EntityBudget.itemsNear >= c.maxItems
+            || FarmDetector.activeCount() > 0;
+        lastStatsTotal = total;
+        if (busy) {
+            player.sendMessage(Text.literal("FarmFPS | items " + EntityBudget.itemsNear + "/" + c.maxItems
+                + " | blocked: " + Stats.spawnsDropped + " items, "
+                + Stats.particlesHidden + " particles, " + Stats.soundsMuted + " sounds"), true);
+        }
     }
 }
