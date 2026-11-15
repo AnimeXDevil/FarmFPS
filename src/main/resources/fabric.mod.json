@@ -13,8 +13,7 @@
   "entrypoints": {
     "client": [
       "com.farmfps.FarmFPS"
-    ],
-    "modmenu": ${modmenu_entrypoints}
+    ]
   },
   "mixins": [
     "farmfps.mixins.json"

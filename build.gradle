@@ -5,7 +5,7 @@ plugins {
 
 // Optional Mod Menu integration. Set modmenu_version in gradle.properties to enable it.
 def modmenuVersion = project.findProperty('modmenu_version')
-def modmenuEntrypoints = modmenuVersion ? '["com.farmfps.compat.ModMenuIntegration"]' : '[]'
+def modmenuOn = modmenuVersion != null
 
 repositories {
 	maven {
@@ -41,10 +41,21 @@ dependencies {
 processResources {
 	def modVersion = project.version
 	inputs.property "version", modVersion
-	inputs.property "modmenu_entrypoints", modmenuEntrypoints
+	inputs.property "modmenuOn", modmenuOn
 
 	filesMatching("fabric.mod.json") {
-		expand "version": modVersion, "modmenu_entrypoints": modmenuEntrypoints
+		expand "version": modVersion
+	}
+
+	// The source fabric.mod.json must stay valid JSON, so the Mod Menu entrypoint
+	// is added to the processed copy only when Mod Menu support is enabled.
+	doLast {
+		if (modmenuOn) {
+			def f = new File(destinationDir, 'fabric.mod.json')
+			def json = new groovy.json.JsonSlurper().parse(f)
+			json.entrypoints.modmenu = ['com.farmfps.compat.ModMenuIntegration']
+			f.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+		}
 	}
 }
 

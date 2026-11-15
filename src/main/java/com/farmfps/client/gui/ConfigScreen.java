@@ -37,7 +37,8 @@ public class ConfigScreen extends Screen {
         int step = rowH + 4;
         int y = 28;
 
-        addDrawableChild(new TextWidget(0, 10, this.width, 9, this.title, this.textRenderer).alignCenter());
+        int titleW = this.textRenderer.getWidth(this.title);
+        addDrawableChild(new TextWidget((this.width - titleW) / 2, 10, titleW, 9, this.title, this.textRenderer));
 
         toggle(left, y, colW, rowH, "Mod enabled", () -> c.enabled, v -> c.enabled = v);
         toggle(right, y, colW, rowH, "Piston snap", () -> c.pistonSnap, v -> c.pistonSnap = v);
