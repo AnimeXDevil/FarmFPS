@@ -1,0 +1,53 @@
+# Builds on every push / PR, and publishes a GitHub Release (with the jar attached) on pushes
+# to the default branch. Also runs automatically after the "Unpack zip" workflow, because
+# commits pushed by GITHUB_TOKEN do not trigger normal push workflows.
+
+name: build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Unpack zip"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # For workflow_run, only continue if the unpack succeeded.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build
+        run: ./gradlew build
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: Artifacts
+          path: build/libs/
+      - name: publish github release
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
+          TAG="v${VERSION}-build.${{ github.run_number }}"
+          JAR=$(ls build/libs/*.jar | grep -v -- '-sources' | head -n 1)
+          gh release create "$TAG" "$JAR" \
+            --title "FarmFPS ${VERSION} (build ${{ github.run_number }})" \
+            --generate-notes \
+            --target "$GITHUB_SHA"
