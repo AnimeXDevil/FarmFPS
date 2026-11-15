@@ -22,17 +22,19 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
-      - name: validate gradle wrapper
-        uses: gradle/actions/wrapper-validation@v6
       - name: setup jdk
         uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'microsoft'
-      - name: make gradle wrapper executable
-        run: chmod +x ./gradlew
+      # Installs Gradle directly, so the build does not depend on gradlew or
+      # gradle/wrapper/gradle-wrapper.jar being present in the repo.
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.8.2'
       - name: build
-        run: ./gradlew build
+        run: gradle build --no-daemon
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
