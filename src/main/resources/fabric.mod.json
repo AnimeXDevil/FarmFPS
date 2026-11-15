@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "farmfps",
+  "version": "${version}",
+  "name": "FarmFPS",
+  "description": "Client-side farm lag fix: snaps piston animations, caps dropped items and XP orbs, and throttles particle and sound spam near busy farms. Works on any server.",
+  "authors": [
+    "FarmFPS contributors"
+  ],
+  "license": "All-Rights-Reserved",
+  "icon": "assets/farmfps/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.farmfps.FarmFPS"
+    ],
+    "modmenu": ${modmenu_entrypoints}
+  },
+  "mixins": [
+    "farmfps.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
