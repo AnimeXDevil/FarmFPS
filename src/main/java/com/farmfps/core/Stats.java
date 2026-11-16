@@ -14,6 +14,7 @@ public final class Stats {
     public static long redstoneHeld;      // visual-only block changes whose redraw was skipped
     public static long lightSkipped;      // client light updates skipped
     public static long entitiesCulled;    // far entities not drawn
+    public static long pistonPushSkipped;  // far piston entity-push searches skipped
     public static long blockEntitiesCulled; // block entity draw checks answered "too far"
 
     // Diagnostics: how often each hook was reached at all (separate from the "did something" counters).
@@ -27,7 +28,7 @@ public final class Stats {
     }
 
     public static long total() {
-        return spawnsDropped + itemTicksSkipped + rendersHidden + pistonSnaps + particlesHidden + soundsMuted + redstoneHeld + lightSkipped + entitiesCulled + blockEntitiesCulled;
+        return spawnsDropped + itemTicksSkipped + rendersHidden + pistonSnaps + particlesHidden + soundsMuted + redstoneHeld + lightSkipped + entitiesCulled + blockEntitiesCulled + pistonPushSkipped;
     }
 
     public static void reset() {
@@ -41,6 +42,7 @@ public final class Stats {
         lightSkipped = 0;
         entitiesCulled = 0;
         blockEntitiesCulled = 0;
+        pistonPushSkipped = 0;
         seenBlockChanges = 0;
         seenFarmChanges = 0;
         seenLightChecks = 0;

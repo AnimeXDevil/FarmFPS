@@ -115,7 +115,8 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "Particles hidden: " + Stats.particlesHidden + " | sounds muted: " + Stats.soundsMuted);
                     say(ctx, "Redstone redraws skipped: " + Stats.redstoneHeld + " (waiting now: " + VisualLock.pendingCount()
                         + ") | light updates skipped: " + Stats.lightSkipped);
-                    say(ctx, "Block entities culled: " + Stats.blockEntitiesCulled + " | far entities culled: " + Stats.entitiesCulled);
+                    say(ctx, "Block entities culled: " + Stats.blockEntitiesCulled + " | far entities culled: " + Stats.entitiesCulled
+                        + " | far piston pushes skipped: " + Stats.pistonPushSkipped);
                     say(ctx, "Hook reach -> block changes: " + Stats.seenBlockChanges + " (in scope " + Stats.seenFarmChanges
                         + ") | light checks: " + Stats.seenLightChecks + " | item packets: " + Stats.seenItemPackets
                         + " | piston ticks: " + Stats.seenPistonTicks);
