@@ -119,7 +119,7 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "FarmFPS " + (c.enabled ? "ON" : "OFF") + " | active farm chunks: " + FarmDetector.activeCount());
                     say(ctx, "Items near: " + EntityBudget.itemsNear + "/" + c.maxItems
                         + " | XP orbs near: " + EntityBudget.xpNear + "/" + c.maxXpOrbs);
-                    say(ctx, "Item spawns dropped: " + Stats.spawnsDropped + " | hidden item ticks skipped: " + Stats.itemTicksSkipped);
+                    say(ctx, "Item spawns dropped: " + Stats.spawnsDropped + " | excess items removed: " + Stats.itemsDiscarded + " | hidden item ticks skipped: " + Stats.itemTicksSkipped);
                     say(ctx, "Item/XP draws hidden: " + Stats.rendersHidden + " | piston snaps: " + Stats.pistonSnaps);
                     say(ctx, "Particles hidden: " + Stats.particlesHidden + " | sounds muted: " + Stats.soundsMuted);
                     say(ctx, "Redstone redraws skipped: " + Stats.redstoneHeld + " (waiting now: " + VisualLock.pendingCount()
@@ -130,6 +130,8 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "Hook reach -> block changes: " + Stats.seenBlockChanges + " (in scope " + Stats.seenFarmChanges
                         + ") | light checks: " + Stats.seenLightChecks + " | item packets: " + Stats.seenItemPackets
                         + " | piston ticks: " + Stats.seenPistonTicks);
+                    say(ctx, "Item settings -> cap: " + c.capItems + " | drop extra: " + c.aggressiveItems
+                        + " | max: " + c.maxItems + " | radius: " + c.cullRadius);
                     say(ctx, "Scope: " + FarmConfig.SCOPE_NAMES[c.redstoneScope] + " | redstone: " + FarmConfig.REDSTONE_NAMES[c.redstoneMode]
                         + " | pistons: " + FarmConfig.PISTON_NAMES[c.pistonMode]);
                     say(ctx, "A counter stuck at 0 during a farm means that hook did not apply on this version.");

@@ -13,6 +13,8 @@ import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
+
 /**
  * Per-tick glue between Minecraft and the version-independent core.
  * This runs 20 times a second, not per frame, so the entity scan may use a normal iterator.
@@ -25,6 +27,8 @@ public final class ClientTicker {
     private static int statusTicks;
     private static int lockTicks;
     private static long lastStatsTotal;
+    private static final ArrayList<Entity> DISCARD = new ArrayList<>(512);
+    private static final int MAX_DISCARDS_PER_SCAN = 300;
 
     private ClientTicker() {
     }
@@ -90,6 +94,37 @@ public final class ClientTicker {
             }
         }
         EntityBudget.update(items, xp, player.getX(), player.getY(), player.getZ());
+        if (c.enabled && c.capItems && c.aggressiveItems && items > c.maxItems) {
+            discardExcessItems(world, r2, player);
+        }
+    }
+
+    /**
+     * Items that already exist on the client beyond the cap (they arrived before it was reached)
+     * are removed from the client world. The server still has them: hoppers and pickups work, and
+     * packets about an item the client no longer has are ignored. Runs a few times a second, so
+     * allocation here is fine; the batch size is limited to avoid a hitch.
+     */
+    private static void discardExcessItems(ClientWorld world, double r2, ClientPlayerEntity player) {
+        int keep = EntityBudget.itemKeep;
+        if (keep >= EntityBudget.FULL) {
+            return;
+        }
+        DISCARD.clear();
+        for (Entity e : world.getEntities()) {
+            if (e instanceof ItemEntity && e.squaredDistanceTo(player) <= r2
+                && EntityBudget.isHidden(e.getId(), keep)) {
+                DISCARD.add(e);
+                if (DISCARD.size() >= MAX_DISCARDS_PER_SCAN) {
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < DISCARD.size(); i++) {
+            DISCARD.get(i).discard();
+        }
+        Stats.itemsDiscarded += DISCARD.size();
+        DISCARD.clear();
     }
 
     private static void showStatus(ClientPlayerEntity player, FarmConfig c) {
