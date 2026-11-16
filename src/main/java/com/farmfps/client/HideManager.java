@@ -25,7 +25,10 @@ import net.minecraft.block.TargetBlock;
 import net.minecraft.block.TripwireBlock;
 import net.minecraft.block.TripwireHookBlock;
 import net.minecraft.block.WallRedstoneTorchBlock;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.client.MinecraftClient;
@@ -57,6 +60,18 @@ public final class HideManager {
 
     public static boolean isBlockHidden(Block b) {
         return blocks.contains(b);
+    }
+
+    /** True if FarmFPS hides this entity (so its hitbox should not be drawn either). */
+    public static boolean hidesEntity(Entity e) {
+        FarmConfig c = FarmConfig.INSTANCE;
+        if (!c.enabled) {
+            return false;
+        }
+        if (e instanceof ItemEntity item) {
+            return c.hideAllItems || (c.hideFilteredItems && isItemHidden(item.getStack().getItem()));
+        }
+        return mobsActive && !(e instanceof PlayerEntity) && isMobHidden(e.getType());
     }
 
     /** Redstone block types hidden by farm mode (subject to the solid-face fix). */
