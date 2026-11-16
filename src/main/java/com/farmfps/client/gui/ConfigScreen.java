@@ -40,7 +40,7 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : 7);
+        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : 8);
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
@@ -90,8 +90,9 @@ public class ConfigScreen extends Screen {
             slider(right, y, colW, rowH, "Farm trigger", 5, 200, c.farmSensitivity, v -> c.farmSensitivity = v);
             y += step;
             slider(left, y, colW, rowH, "Far block dist", 8, 96, c.blockEntityDistance, v -> c.blockEntityDistance = v);
+            slider(left, y + step, colW, rowH, "Anim skip", 0, 8, c.textureAnimSkip, v -> c.textureAnimSkip = v);
             slider(right, y, colW, rowH, "Far mob dist", 8, 96, c.entityRenderDistance, v -> c.entityRenderDistance = v);
-            y += step;
+            y += step * 2;
         }
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Done"), b -> this.close())

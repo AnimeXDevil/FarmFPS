@@ -53,6 +53,7 @@ public final class FarmConfig {
     public int farmSensitivity = 20;      // activity score at which a chunk counts as an active farm
     public int redstoneFlushTicks = 10;   // "refresh slowly" interval in ticks
     public int blockEntityDistance = 32;  // block entities farther than this are not drawn
+    public int textureAnimSkip = 2;       // animated textures update 1 tick in (n+1) while a farm is active; 0 = off
     public int entityRenderDistance = 32; // other entities farther than this are not drawn
     public int preset = 0;                // 0 Balanced, 1 Mega-Farm, 2 Potato PC (display only)
 
@@ -69,6 +70,7 @@ public final class FarmConfig {
         redstoneFlushTicks = clampInt(redstoneFlushTicks, 2, 40);
         blockEntityDistance = clampInt(blockEntityDistance, 8, 96);
         entityRenderDistance = clampInt(entityRenderDistance, 8, 96);
+        textureAnimSkip = clampInt(textureAnimSkip, 0, 8);
         redstoneScope = clampInt(redstoneScope, 0, SCOPE_NAMES.length - 1);
         redstoneMode = clampInt(redstoneMode, 0, REDSTONE_NAMES.length - 1);
         pistonMode = clampInt(pistonMode, 0, PISTON_NAMES.length - 1);
@@ -128,6 +130,7 @@ public final class FarmConfig {
         redstoneFlushTicks = o.redstoneFlushTicks;
         blockEntityDistance = o.blockEntityDistance;
         entityRenderDistance = o.entityRenderDistance;
+        textureAnimSkip = o.textureAnimSkip;
         preset = o.preset;
         clamp();
     }

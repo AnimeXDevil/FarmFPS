@@ -94,6 +94,15 @@ public class FarmFPS implements ClientModInitializer {
                     .then(ClientCommandManager.literal("vanilla").executes(ctx -> setPistons(ctx, 0)))
                     .then(ClientCommandManager.literal("snap").executes(ctx -> setPistons(ctx, 1)))
                     .then(ClientCommandManager.literal("ghost").executes(ctx -> setPistons(ctx, 2))))
+                .then(ClientCommandManager.literal("anim")
+                    .then(ClientCommandManager.argument("skip", IntegerArgumentType.integer(0, 8))
+                        .executes(ctx -> {
+                            FarmConfig.INSTANCE.textureAnimSkip = IntegerArgumentType.getInteger(ctx, "skip");
+                            saveConfig();
+                            say(ctx, "Animated textures: update 1 tick in " + (FarmConfig.INSTANCE.textureAnimSkip + 1)
+                                + (FarmConfig.INSTANCE.textureAnimSkip == 0 ? " (off)" : " while a farm is active"));
+                            return 1;
+                        })))
                 .then(ClientCommandManager.literal("light")
                     .executes(ctx -> {
                         FarmConfig.INSTANCE.skipRedstoneLight = !FarmConfig.INSTANCE.skipRedstoneLight;
@@ -116,7 +125,8 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "Redstone redraws skipped: " + Stats.redstoneHeld + " (waiting now: " + VisualLock.pendingCount()
                         + ") | light updates skipped: " + Stats.lightSkipped);
                     say(ctx, "Block entities culled: " + Stats.blockEntitiesCulled + " | far entities culled: " + Stats.entitiesCulled
-                        + " | far piston pushes skipped: " + Stats.pistonPushSkipped);
+                        + " | far piston pushes skipped: " + Stats.pistonPushSkipped
+                        + " | texture ticks skipped: " + Stats.textureTicksSkipped);
                     say(ctx, "Hook reach -> block changes: " + Stats.seenBlockChanges + " (in scope " + Stats.seenFarmChanges
                         + ") | light checks: " + Stats.seenLightChecks + " | item packets: " + Stats.seenItemPackets
                         + " | piston ticks: " + Stats.seenPistonTicks);
