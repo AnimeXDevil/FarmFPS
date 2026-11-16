@@ -104,7 +104,7 @@ public class FarmFPS implements ClientModInitializer {
                     c.hideAllItems = on;
                     saveConfig();
                     HideManager.reload();
-                    say(ctx, "Farm mode " + (on ? "ON: redstone blocks invisible, drops hidden (F3+B shows drops)" : "OFF"));
+                    say(ctx, "Farm mode " + (on ? "ON: redstone blocks invisible, drops hidden; levers stay visible" : "OFF"));
                     return 1;
                 }))
                 .then(ClientCommandManager.literal("hide")

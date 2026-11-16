@@ -7,7 +7,6 @@ import com.farmfps.core.FarmDetector;
 import com.farmfps.core.Stats;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.entity.EntityRenderer;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.ItemEntity;
@@ -57,15 +56,11 @@ public abstract class EntityCullMixin {
     }
 
     /**
-     * Farm mode: hide all drops, or only the filtered item types. With hitboxes on (F3+B) drops are
-     * drawn normally so they can be inspected.
+     * Farm mode: hide all drops, or only the filtered item types.
      */
     private static boolean farmfps$hideDrop(ItemEntity item) {
         FarmConfig c = FarmConfig.INSTANCE;
         if (!c.enabled || !(c.hideAllItems || c.hideFilteredItems)) {
-            return false;
-        }
-        if (MinecraftClient.getInstance().getEntityRenderDispatcher().shouldRenderHitboxes()) {
             return false;
         }
         return c.hideAllItems || HideManager.isItemHidden(item.getStack().getItem());

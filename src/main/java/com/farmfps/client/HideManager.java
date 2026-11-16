@@ -11,7 +11,6 @@ import net.minecraft.block.DaylightDetectorBlock;
 import net.minecraft.block.DetectorRailBlock;
 import net.minecraft.block.DispenserBlock;
 import net.minecraft.block.HopperBlock;
-import net.minecraft.block.LeverBlock;
 import net.minecraft.block.NoteBlock;
 import net.minecraft.block.ObserverBlock;
 import net.minecraft.block.PistonBlock;
@@ -143,7 +142,7 @@ public final class HideManager {
             || b instanceof WallRedstoneTorchBlock
             || b instanceof RedstoneLampBlock
             || b instanceof NoteBlock
-            || b instanceof LeverBlock
+            // Levers are deliberately not hidden: they are the on/off switch of a farm.
             || b instanceof ButtonBlock
             || b instanceof AbstractPressurePlateBlock
             || b instanceof TripwireBlock
