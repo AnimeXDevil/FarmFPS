@@ -46,7 +46,12 @@ public abstract class PistonCullMixin {
      */
     @Inject(method = "getPushedBlock()Lnet/minecraft/block/BlockState;", at = @At("HEAD"), cancellable = true)
     private void farmfps$ghost(CallbackInfoReturnable<BlockState> cir) {
-        if (FarmConfig.INSTANCE.pistonMode == 2) {
+        FarmConfig cfg = FarmConfig.INSTANCE;
+        if (cfg.enabled && cfg.hideMovingBlocks) {
+            cir.setReturnValue(Blocks.AIR.getDefaultState());
+            return;
+        }
+        if (cfg.pistonMode == 2) {
             BlockPos pos = ((BlockEntity) (Object) this).getPos();
             if (PistonSnap.shouldSnap(pos.getX() >> 4, pos.getZ() >> 4)) {
                 cir.setReturnValue(Blocks.AIR.getDefaultState());

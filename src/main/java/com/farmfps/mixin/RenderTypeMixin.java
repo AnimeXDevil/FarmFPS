@@ -1,7 +1,9 @@
 package com.farmfps.mixin;
 
 import com.farmfps.client.HideManager;
+import com.farmfps.core.FarmConfig;
 import net.minecraft.block.AbstractBlock;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,7 +25,14 @@ public abstract class RenderTypeMixin {
             return;
         }
         Object self = this;
-        if (HideManager.isBlockHidden(((BlockState) self).getBlock())) {
+        BlockState state = (BlockState) self;
+        Block block = state.getBlock();
+        if (HideManager.isFilterHidden(block)) {
+            cir.setReturnValue(BlockRenderType.INVISIBLE);
+        } else if (HideManager.isRedstoneHidden(block)
+            && !(FarmConfig.INSTANCE.solidFaceFix && state.isOpaque())) {
+            // With the face fix on, full-size redstone blocks stay drawn so the faces of the blocks
+            // next to them are not culled into see-through holes.
             cir.setReturnValue(BlockRenderType.INVISIBLE);
         }
     }

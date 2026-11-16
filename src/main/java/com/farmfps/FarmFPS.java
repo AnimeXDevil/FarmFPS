@@ -102,9 +102,11 @@ public class FarmFPS implements ClientModInitializer {
                     boolean on = !(c.hideRedstoneBlocks && c.hideAllItems);
                     c.hideRedstoneBlocks = on;
                     c.hideAllItems = on;
+                    c.hideMovingBlocks = on;
+                    c.muteAllRedstoneSounds = on;
                     saveConfig();
                     HideManager.reload();
-                    say(ctx, "Farm mode " + (on ? "ON: redstone blocks invisible, drops hidden; levers stay visible" : "OFF"));
+                    say(ctx, "Farm mode " + (on ? "ON: redstone blocks invisible, drops hidden; levers stay visible; moving blocks and redstone sounds off too" : "OFF"));
                     return 1;
                 }))
                 .then(ClientCommandManager.literal("hide")
@@ -119,6 +121,25 @@ public class FarmFPS implements ClientModInitializer {
                         FarmConfig.INSTANCE.hideAllItems = !FarmConfig.INSTANCE.hideAllItems;
                         saveConfig();
                         say(ctx, "All dropped items hidden: " + (FarmConfig.INSTANCE.hideAllItems ? "ON" : "OFF"));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("moving").executes(ctx -> {
+                        FarmConfig.INSTANCE.hideMovingBlocks = !FarmConfig.INSTANCE.hideMovingBlocks;
+                        saveConfig();
+                        say(ctx, "Piston-moved blocks hidden while moving: " + (FarmConfig.INSTANCE.hideMovingBlocks ? "ON" : "OFF"));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("sounds").executes(ctx -> {
+                        FarmConfig.INSTANCE.muteAllRedstoneSounds = !FarmConfig.INSTANCE.muteAllRedstoneSounds;
+                        saveConfig();
+                        say(ctx, "Redstone sounds muted (levers excepted): " + (FarmConfig.INSTANCE.muteAllRedstoneSounds ? "ON" : "OFF"));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("fish").executes(ctx -> {
+                        FarmConfig.INSTANCE.hideFish = !FarmConfig.INSTANCE.hideFish;
+                        saveConfig();
+                        HideManager.rebuild();
+                        say(ctx, "Fish hidden: " + (FarmConfig.INSTANCE.hideFish ? "ON" : "OFF"));
                         return 1;
                     }))
                     .then(ClientCommandManager.literal("filter").executes(ctx -> {
@@ -176,9 +197,9 @@ public class FarmFPS implements ClientModInitializer {
                         })))
                 .then(ClientCommandManager.literal("light")
                     .executes(ctx -> {
-                        FarmConfig.INSTANCE.skipRedstoneLight = !FarmConfig.INSTANCE.skipRedstoneLight;
+                        FarmConfig.INSTANCE.skipLightUpdates = !FarmConfig.INSTANCE.skipLightUpdates;
                         saveConfig();
-                        say(ctx, "Skip redstone light updates: " + (FarmConfig.INSTANCE.skipRedstoneLight ? "ON" : "OFF"));
+                        say(ctx, "Skip redstone light updates: " + (FarmConfig.INSTANCE.skipLightUpdates ? "ON" : "OFF"));
                         return 1;
                     }))
                 .then(ClientCommandManager.literal("preset")

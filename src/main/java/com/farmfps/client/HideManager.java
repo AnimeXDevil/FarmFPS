@@ -25,6 +25,7 @@ import net.minecraft.block.TargetBlock;
 import net.minecraft.block.TripwireBlock;
 import net.minecraft.block.TripwireHookBlock;
 import net.minecraft.block.WallRedstoneTorchBlock;
+import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.client.MinecraftClient;
@@ -42,6 +43,11 @@ import java.util.Set;
  */
 public final class HideManager {
     private static volatile Set<Block> blocks = Collections.emptySet();
+    private static volatile Set<Block> redBlocks = Collections.emptySet();
+    private static volatile Set<Block> filterBlocks = Collections.emptySet();
+    private static volatile Set<EntityType<?>> mobs = Collections.emptySet();
+    /** Fast pre-check for the mob render hook. */
+    public static volatile boolean mobsActive;
     private static volatile Set<Item> items = Collections.emptySet();
     /** Fast pre-check for the render-type hook. */
     public static volatile boolean blocksActive;
@@ -53,6 +59,20 @@ public final class HideManager {
         return blocks.contains(b);
     }
 
+    /** Redstone block types hidden by farm mode (subject to the solid-face fix). */
+    public static boolean isRedstoneHidden(Block b) {
+        return redBlocks.contains(b);
+    }
+
+    /** Block types hidden because the user filtered their item; always invisible. */
+    public static boolean isFilterHidden(Block b) {
+        return filterBlocks.contains(b);
+    }
+
+    public static boolean isMobHidden(EntityType<?> t) {
+        return mobs.contains(t);
+    }
+
     public static boolean isItemHidden(Item i) {
         return items.contains(i);
     }
@@ -61,11 +81,15 @@ public final class HideManager {
     public static void rebuild() {
         FarmConfig c = FarmConfig.INSTANCE;
         HashSet<Block> b = new HashSet<>();
+        HashSet<Block> red = new HashSet<>();
+        HashSet<Block> fil = new HashSet<>();
         HashSet<Item> it = new HashSet<>();
+        HashSet<EntityType<?>> mb = new HashSet<>();
         if (c.enabled && c.hideRedstoneBlocks) {
             for (Block blk : Registries.BLOCK) {
                 if (isRedstoneRelated(blk)) {
                     b.add(blk);
+                    red.add(blk);
                 }
             }
         }
@@ -77,13 +101,32 @@ public final class HideManager {
                     if (i instanceof BlockItem bi) {
                         Block placed = bi.getBlock();
                         b.add(placed);
+                        fil.add(placed);
                         if (placed == Blocks.KELP) {
                             b.add(Blocks.KELP_PLANT);
+                            fil.add(Blocks.KELP_PLANT);
                         }
                     }
                 }
             }
         }
+        if (c.enabled && c.hideFish) {
+            mb.add(EntityType.COD);
+            mb.add(EntityType.SALMON);
+            mb.add(EntityType.PUFFERFISH);
+            mb.add(EntityType.TROPICAL_FISH);
+        }
+        if (c.enabled && c.hideFilteredMobs && c.hiddenMobs != null && !c.hiddenMobs.isEmpty()) {
+            for (EntityType<?> t : Registries.ENTITY_TYPE) {
+                if (c.hiddenMobs.contains(Registries.ENTITY_TYPE.getId(t).toString())) {
+                    mb.add(t);
+                }
+            }
+        }
+        redBlocks = Collections.unmodifiableSet(red);
+        filterBlocks = Collections.unmodifiableSet(fil);
+        mobs = Collections.unmodifiableSet(mb);
+        mobsActive = !mb.isEmpty();
         blocks = Collections.unmodifiableSet(b);
         items = Collections.unmodifiableSet(it);
         blocksActive = !b.isEmpty();

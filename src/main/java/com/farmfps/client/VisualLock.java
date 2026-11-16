@@ -78,7 +78,7 @@ public final class VisualLock {
         if (HideManager.blocksActive && old != state && (flags & NO_REDRAW) == 0
             && HideManager.isBlockHidden(newBlock) && HideManager.isBlockHidden(oldBlock)) {
             Stats.redstoneHeld++;
-            return c.skipRedstoneLight ? (WANT_NO_REDRAW | WANT_NO_LIGHT) : WANT_NO_REDRAW;
+            return c.skipLightUpdates ? (WANT_NO_REDRAW | WANT_NO_LIGHT) : WANT_NO_REDRAW;
         }
         if (!FarmDetector.shouldAffect(cx, cz)) {
             return 0;
@@ -95,7 +95,7 @@ public final class VisualLock {
                 markDirty(pos);
             }
         }
-        if (c.skipRedstoneLight
+        if (c.skipLightUpdates
             && (flip || (flags & MOVED) != 0 || isPistonPart(newBlock) || isPistonPart(oldBlock))) {
             mask |= WANT_NO_LIGHT;
         }

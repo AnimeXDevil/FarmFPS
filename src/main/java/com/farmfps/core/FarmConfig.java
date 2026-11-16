@@ -35,13 +35,19 @@ public final class FarmConfig {
     public boolean muteRedstoneSounds = true; // mute note block / dispenser / piston / trapdoor sounds
     public boolean blockEntityCull = true;    // stop drawing far block entities
     public boolean entityCull = true;         // stop drawing far non-player entities
-    public boolean skipRedstoneLight = true;  // no client light updates for redstone / piston state changes
+    public boolean skipLightUpdates = false;  // no client light updates for redstone / piston state changes
 
     // Farm mode: draw redstone-related blocks as invisible, hide dropped items
     public boolean hideRedstoneBlocks = false; // pistons, observers, dispensers, hoppers, dust, iron doors... not drawn
     public boolean hideAllItems = false;       // no dropped item is drawn (F3+B hitboxes show them again)
     public boolean hideFilteredItems = true;   // items in hiddenItems are not drawn, and neither is their placed block
     public java.util.List<String> hiddenItems = new java.util.ArrayList<>();
+    public boolean hideMovingBlocks = false;   // blocks being pushed by pistons are not drawn while they move
+    public boolean muteAllRedstoneSounds = false; // every redstone-block sound except levers, everywhere
+    public boolean solidFaceFix = true;        // keep full-size redstone blocks drawn so neighbour faces have no holes
+    public boolean hideFish = false;           // cod, salmon, pufferfish, tropical fish are not drawn
+    public boolean hideFilteredMobs = true;    // entity types in hiddenMobs are not drawn
+    public java.util.List<String> hiddenMobs = new java.util.ArrayList<>();
 
     // Where redstone and piston optimizations apply: 0 = detected farm chunks only, 1 = everywhere
     public int redstoneScope = 0;
@@ -123,11 +129,17 @@ public final class FarmConfig {
         muteRedstoneSounds = o.muteRedstoneSounds;
         blockEntityCull = o.blockEntityCull;
         entityCull = o.entityCull;
-        skipRedstoneLight = o.skipRedstoneLight;
+        skipLightUpdates = o.skipLightUpdates;
         hideRedstoneBlocks = o.hideRedstoneBlocks;
         hideAllItems = o.hideAllItems;
         hideFilteredItems = o.hideFilteredItems;
         hiddenItems = o.hiddenItems == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(o.hiddenItems);
+        hideMovingBlocks = o.hideMovingBlocks;
+        muteAllRedstoneSounds = o.muteAllRedstoneSounds;
+        solidFaceFix = o.solidFaceFix;
+        hideFish = o.hideFish;
+        hideFilteredMobs = o.hideFilteredMobs;
+        hiddenMobs = o.hiddenMobs == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(o.hiddenMobs);
         redstoneScope = o.redstoneScope;
         redstoneMode = o.redstoneMode;
         pistonMode = o.pistonMode;

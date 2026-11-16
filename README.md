@@ -39,3 +39,6 @@ Every push to `main` builds a jar and adds it to the single rolling pre-release 
 
 ## Farm mode
 `/farmfps farmmode` toggles everything below. `/farmfps hide redstone|drops|filter` toggle the parts. `/farmfps hide add <item>`, `hide hand` (item in your hand), `hide remove <item>`, `hide list`, `hide clear` manage the item filter: filtered items are not drawn as drops, and their placed block is drawn invisible. Hidden redstone types: pistons, observers, dispensers/droppers, hoppers, dust, repeaters, comparators, torches, lamps, note blocks, buttons, plates, tripwire, targets, daylight sensors, powered/detector rails, crafters, copper bulbs, redstone blocks, iron doors and iron trapdoors. Levers stay visible on purpose (they switch the farm). Turn `/farmfps hide drops` off to see drops again.
+
+## Update 11 additions
+Settings page 4 has: Hide redstone blocks, Solid face fix (keeps full-size redstone blocks drawn so neighbouring faces have no holes; turn off for maximum speed), Hide all drops, Hide moving blocks, Mute all redstone sounds (levers excepted), Hide fish, and two search pickers (Hide items..., Hide mobs...). "Skip light" is now OFF by default: it can leave stale shadows. Commands: `/farmfps hide moving|sounds|fish`.

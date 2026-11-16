@@ -35,6 +35,28 @@ public final class EffectCounters {
         return ++SOUNDS[slot] <= limit;
     }
 
+    /** Every redstone-component sound except the lever (which is the farm's on/off switch). */
+    public static boolean isRedstoneSound(String path) {
+        if (path.contains("lever")) {
+            return false;
+        }
+        return path.contains("piston.")
+            || path.contains("dispenser.")
+            || path.contains("note_block.")
+            || path.contains("comparator.")
+            || path.contains("repeater.")
+            || path.contains("button.")
+            || path.contains("pressure_plate.")
+            || path.contains("tripwire.")
+            || path.contains("iron_door.")
+            || path.contains("iron_trapdoor.")
+            || path.contains("copper_bulb.")
+            || path.contains("crafter.")
+            || path.contains("redstone_torch.")
+            || path.contains("target.")
+            || path.contains("daylight_detector.");
+    }
+
     /** Sound families that redstone farms spam. Muted entirely inside detected farm chunks. */
     public static boolean isRedstoneNoise(String path) {
         return path.startsWith("block.note_block.")

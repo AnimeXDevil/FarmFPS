@@ -42,6 +42,12 @@ public abstract class EntityCullMixin {
         } else if (entity instanceof ExperienceOrbEntity) {
             keep = EntityBudget.xpKeep;
         } else {
+            if (HideManager.mobsActive && FarmConfig.INSTANCE.enabled && !(entity instanceof PlayerEntity)
+                && HideManager.isMobHidden(entity.getType())) {
+                Stats.entitiesCulled++;
+                cir.setReturnValue(Boolean.FALSE);
+                return;
+            }
             farmfps$cullFarEntity(entity, x, y, z, cir);
             return;
         }

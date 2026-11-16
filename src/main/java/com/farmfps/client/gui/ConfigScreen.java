@@ -18,7 +18,7 @@ import java.util.function.IntConsumer;
  * works with touch controls. Opens from Mod Menu (if installed) or with /farmfps.
  */
 public class ConfigScreen extends Screen {
-    private static final int PAGES = 3;
+    private static final int PAGES = 4;
 
     private final Screen parent;
     private final int page;
@@ -41,7 +41,7 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = this.page == 0 ? 5 : (this.page == 1 ? 6 : 8);
+        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : (this.page == 2 ? 8 : 5));
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
@@ -72,7 +72,7 @@ public class ConfigScreen extends Screen {
             cycle(right, y, colW, rowH, "Redstone", FarmConfig.REDSTONE_NAMES, () -> c.redstoneMode, v -> c.redstoneMode = v);
             y += step;
             cycle(left, y, colW, rowH, "Pistons", FarmConfig.PISTON_NAMES, () -> c.pistonMode, v -> c.pistonMode = v);
-            toggle(right, y, colW, rowH, "Skip light", () -> c.skipRedstoneLight, v -> c.skipRedstoneLight = v);
+            toggle(right, y, colW, rowH, "Skip light", () -> c.skipLightUpdates, v -> c.skipLightUpdates = v);
             y += step;
             toggle(left, y, colW, rowH, "Mute redstone snd", () -> c.muteRedstoneSounds, v -> c.muteRedstoneSounds = v);
             toggle(right, y, colW, rowH, "Cull far blocks", () -> c.blockEntityCull, v -> c.blockEntityCull = v);
@@ -80,9 +80,28 @@ public class ConfigScreen extends Screen {
             toggle(left, y, colW, rowH, "Cull far mobs", () -> c.entityCull, v -> c.entityCull = v);
             slider(right, y, colW, rowH, "Refresh ticks", 2, 40, c.redstoneFlushTicks, v -> c.redstoneFlushTicks = v);
             y += step;
+        } else if (this.page == 3) {
             toggleThen(left, y, colW, rowH, "Hide redstone blk", () -> c.hideRedstoneBlocks,
                 v -> c.hideRedstoneBlocks = v, HideManager::reload);
-            toggle(right, y, colW, rowH, "Hide all drops", () -> c.hideAllItems, v -> c.hideAllItems = v);
+            toggleThen(right, y, colW, rowH, "Solid face fix", () -> c.solidFaceFix,
+                v -> c.solidFaceFix = v, HideManager::reload);
+            y += step;
+            toggle(left, y, colW, rowH, "Hide all drops", () -> c.hideAllItems, v -> c.hideAllItems = v);
+            toggle(right, y, colW, rowH, "Hide moving blks", () -> c.hideMovingBlocks, v -> c.hideMovingBlocks = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Mute redstone all", () -> c.muteAllRedstoneSounds, v -> c.muteAllRedstoneSounds = v);
+            toggleThen(right, y, colW, rowH, "Hide fish", () -> c.hideFish, v -> c.hideFish = v, HideManager::rebuild);
+            y += step;
+            addDrawableChild(ButtonWidget.builder(Text.literal("Hide items..."), b -> {
+                if (this.client != null) {
+                    this.client.setScreen(new PickerScreen(this, PickerScreen.Kind.ITEMS));
+                }
+            }).dimensions(left, y, colW, rowH).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Hide mobs..."), b -> {
+                if (this.client != null) {
+                    this.client.setScreen(new PickerScreen(this, PickerScreen.Kind.MOBS));
+                }
+            }).dimensions(right, y, colW, rowH).build());
             y += step;
         } else {
             slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);
