@@ -71,14 +71,20 @@ public final class VisualLock {
         int cx = pos.getX() >> 4;
         int cz = pos.getZ() >> 4;
         FarmDetector.record(cx, cz, FarmDetector.WEIGHT_BLOCK_UPDATE);
+        Block newBlock = state.getBlock();
+        BlockState old = world.getBlockState(pos);
+        Block oldBlock = old.getBlock();
+        // Farm mode: a change between two hidden block types draws nothing, so skip redraw and light.
+        if (HideManager.blocksActive && old != state && (flags & NO_REDRAW) == 0
+            && HideManager.isBlockHidden(newBlock) && HideManager.isBlockHidden(oldBlock)) {
+            Stats.redstoneHeld++;
+            return c.skipRedstoneLight ? (WANT_NO_REDRAW | WANT_NO_LIGHT) : WANT_NO_REDRAW;
+        }
         if (!FarmDetector.shouldAffect(cx, cz)) {
             return 0;
         }
         Stats.seenFarmChanges++;
 
-        Block newBlock = state.getBlock();
-        BlockState old = world.getBlockState(pos);
-        Block oldBlock = old.getBlock();
         boolean flip = oldBlock == newBlock && old != state && isVisualOnly(newBlock);
 
         int mask = 0;

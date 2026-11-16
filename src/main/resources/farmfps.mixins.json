@@ -16,6 +16,7 @@
     "LightSuppressMixin",
     "ItemTickMixin",
     "ParticleThrottleMixin",
+    "RenderTypeMixin",
     "PistonCullMixin",
     "SoundThrottleMixin"
   ],

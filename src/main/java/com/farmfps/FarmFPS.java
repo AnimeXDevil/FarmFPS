@@ -1,6 +1,7 @@
 package com.farmfps;
 
 import com.farmfps.client.ClientTicker;
+import com.farmfps.client.HideManager;
 import com.farmfps.client.VisualLock;
 import com.farmfps.client.gui.ConfigScreen;
 import com.farmfps.core.EntityBudget;
@@ -8,6 +9,7 @@ import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
 import com.farmfps.core.Stats;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -32,6 +34,7 @@ public class FarmFPS implements ClientModInitializer {
     public void onInitializeClient() {
         configPath = FabricLoader.getInstance().getConfigDir().resolve("farmfps.json");
         FarmConfig.load(configPath);
+        HideManager.rebuild();
 
         ClientTickEvents.START_CLIENT_TICK.register(ClientTicker::onStartTick);
         ClientTickEvents.END_CLIENT_TICK.register(ClientTicker::onEndTick);
@@ -94,6 +97,74 @@ public class FarmFPS implements ClientModInitializer {
                     .then(ClientCommandManager.literal("vanilla").executes(ctx -> setPistons(ctx, 0)))
                     .then(ClientCommandManager.literal("snap").executes(ctx -> setPistons(ctx, 1)))
                     .then(ClientCommandManager.literal("ghost").executes(ctx -> setPistons(ctx, 2))))
+                .then(ClientCommandManager.literal("farmmode").executes(ctx -> {
+                    FarmConfig c = FarmConfig.INSTANCE;
+                    boolean on = !(c.hideRedstoneBlocks && c.hideAllItems);
+                    c.hideRedstoneBlocks = on;
+                    c.hideAllItems = on;
+                    saveConfig();
+                    HideManager.reload();
+                    say(ctx, "Farm mode " + (on ? "ON: redstone blocks invisible, drops hidden (F3+B shows drops)" : "OFF"));
+                    return 1;
+                }))
+                .then(ClientCommandManager.literal("hide")
+                    .then(ClientCommandManager.literal("redstone").executes(ctx -> {
+                        FarmConfig.INSTANCE.hideRedstoneBlocks = !FarmConfig.INSTANCE.hideRedstoneBlocks;
+                        saveConfig();
+                        HideManager.reload();
+                        say(ctx, "Redstone blocks invisible: " + (FarmConfig.INSTANCE.hideRedstoneBlocks ? "ON" : "OFF"));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("drops").executes(ctx -> {
+                        FarmConfig.INSTANCE.hideAllItems = !FarmConfig.INSTANCE.hideAllItems;
+                        saveConfig();
+                        say(ctx, "All dropped items hidden: " + (FarmConfig.INSTANCE.hideAllItems ? "ON" : "OFF"));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("filter").executes(ctx -> {
+                        FarmConfig.INSTANCE.hideFilteredItems = !FarmConfig.INSTANCE.hideFilteredItems;
+                        saveConfig();
+                        HideManager.reload();
+                        say(ctx, "Item filter: " + (FarmConfig.INSTANCE.hideFilteredItems ? "ON" : "OFF"));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("add")
+                        .then(ClientCommandManager.argument("item", StringArgumentType.greedyString())
+                            .executes(ctx -> hideAdd(ctx, StringArgumentType.getString(ctx, "item")))))
+                    .then(ClientCommandManager.literal("hand").executes(ctx -> {
+                        var player = ctx.getSource().getPlayer();
+                        if (player == null || player.getMainHandStack().isEmpty()) {
+                            say(ctx, "Hold the item you want to hide first");
+                            return 0;
+                        }
+                        return hideAdd(ctx, HideManager.idOf(player.getMainHandStack().getItem()));
+                    }))
+                    .then(ClientCommandManager.literal("remove")
+                        .then(ClientCommandManager.argument("item", StringArgumentType.greedyString())
+                            .executes(ctx -> {
+                                String id = HideManager.resolveItem(StringArgumentType.getString(ctx, "item"));
+                                if (id == null || !FarmConfig.INSTANCE.hiddenItems.remove(id)) {
+                                    say(ctx, "That item is not in the hidden list");
+                                    return 0;
+                                }
+                                saveConfig();
+                                HideManager.reload();
+                                say(ctx, "Showing " + id + " again");
+                                return 1;
+                            })))
+                    .then(ClientCommandManager.literal("list").executes(ctx -> {
+                        say(ctx, FarmConfig.INSTANCE.hiddenItems.isEmpty()
+                            ? "Hidden items: none. Use /farmfps hide add <item> or /farmfps hide hand"
+                            : "Hidden items: " + String.join(", ", FarmConfig.INSTANCE.hiddenItems));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("clear").executes(ctx -> {
+                        FarmConfig.INSTANCE.hiddenItems.clear();
+                        saveConfig();
+                        HideManager.reload();
+                        say(ctx, "Hidden item list cleared");
+                        return 1;
+                    })))
                 .then(ClientCommandManager.literal("anim")
                     .then(ClientCommandManager.argument("skip", IntegerArgumentType.integer(0, 8))
                         .executes(ctx -> {
@@ -139,6 +210,7 @@ public class FarmFPS implements ClientModInitializer {
                 }))
                 .then(ClientCommandManager.literal("reload").executes(ctx -> {
                     FarmConfig.load(configPath);
+                    HideManager.reload();
                     say(ctx, "FarmFPS config reloaded");
                     return 1;
                 }))
@@ -146,6 +218,21 @@ public class FarmFPS implements ClientModInitializer {
         );
 
         LOGGER.info("FarmFPS initialized");
+    }
+
+    private static int hideAdd(CommandContext<FabricClientCommandSource> ctx, String text) {
+        String id = HideManager.resolveItem(text);
+        if (id == null) {
+            say(ctx, "Unknown item: " + text + " (example: kelp or minecraft:sea_pickle)");
+            return 0;
+        }
+        if (!FarmConfig.INSTANCE.hiddenItems.contains(id)) {
+            FarmConfig.INSTANCE.hiddenItems.add(id);
+        }
+        saveConfig();
+        HideManager.reload();
+        say(ctx, "Hiding " + id + " (dropped item and placed block)");
+        return 1;
     }
 
     private static int setRedstone(CommandContext<FabricClientCommandSource> ctx, int mode) {

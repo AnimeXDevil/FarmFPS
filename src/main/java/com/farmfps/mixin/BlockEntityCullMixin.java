@@ -4,6 +4,7 @@ import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
 import com.farmfps.core.Stats;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -27,6 +28,11 @@ public interface BlockEntityCullMixin {
     )
     private static void farmfps$cull(BlockEntity blockEntity, Vec3d cameraPos, CallbackInfoReturnable<Boolean> cir) {
         FarmConfig c = FarmConfig.INSTANCE;
+        if (c.enabled && c.hideRedstoneBlocks && blockEntity instanceof PistonBlockEntity) {
+            Stats.blockEntitiesCulled++;
+            cir.setReturnValue(Boolean.FALSE);
+            return;
+        }
         if (!c.enabled || !c.blockEntityCull) {
             return;
         }

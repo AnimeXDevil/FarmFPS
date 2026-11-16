@@ -1,6 +1,7 @@
 package com.farmfps.client.gui;
 
 import com.farmfps.FarmFPS;
+import com.farmfps.client.HideManager;
 import com.farmfps.core.FarmConfig;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -40,7 +41,7 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : 8);
+        int rows = this.page == 0 ? 5 : (this.page == 1 ? 6 : 8);
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
@@ -78,6 +79,10 @@ public class ConfigScreen extends Screen {
             y += step;
             toggle(left, y, colW, rowH, "Cull far mobs", () -> c.entityCull, v -> c.entityCull = v);
             slider(right, y, colW, rowH, "Refresh ticks", 2, 40, c.redstoneFlushTicks, v -> c.redstoneFlushTicks = v);
+            y += step;
+            toggleThen(left, y, colW, rowH, "Hide redstone blk", () -> c.hideRedstoneBlocks,
+                v -> c.hideRedstoneBlocks = v, HideManager::reload);
+            toggle(right, y, colW, rowH, "Hide all drops", () -> c.hideAllItems, v -> c.hideAllItems = v);
             y += step;
         } else {
             slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);
@@ -120,6 +125,15 @@ public class ConfigScreen extends Screen {
         addDrawableChild(ButtonWidget.builder(toggleText(name, get.getAsBoolean()), b -> {
             set.accept(!get.getAsBoolean());
             b.setMessage(toggleText(name, get.getAsBoolean()));
+        }).dimensions(x, y, w, h).build());
+    }
+
+    private void toggleThen(int x, int y, int w, int h, String name, BooleanSupplier get, Consumer<Boolean> set,
+                            Runnable after) {
+        addDrawableChild(ButtonWidget.builder(toggleText(name, get.getAsBoolean()), b -> {
+            set.accept(!get.getAsBoolean());
+            b.setMessage(toggleText(name, get.getAsBoolean()));
+            after.run();
         }).dimensions(x, y, w, h).build());
     }
 

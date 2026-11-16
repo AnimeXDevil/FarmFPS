@@ -37,6 +37,12 @@ public final class FarmConfig {
     public boolean entityCull = true;         // stop drawing far non-player entities
     public boolean skipRedstoneLight = true;  // no client light updates for redstone / piston state changes
 
+    // Farm mode: draw redstone-related blocks as invisible, hide dropped items
+    public boolean hideRedstoneBlocks = false; // pistons, observers, dispensers, hoppers, dust, iron doors... not drawn
+    public boolean hideAllItems = false;       // no dropped item is drawn (F3+B hitboxes show them again)
+    public boolean hideFilteredItems = true;   // items in hiddenItems are not drawn, and neither is their placed block
+    public java.util.List<String> hiddenItems = new java.util.ArrayList<>();
+
     // Where redstone and piston optimizations apply: 0 = detected farm chunks only, 1 = everywhere
     public int redstoneScope = 0;
     // Visual-only redstone state changes: 0 = vanilla, 1 = redraw a couple of times a second, 2 = frozen
@@ -118,6 +124,10 @@ public final class FarmConfig {
         blockEntityCull = o.blockEntityCull;
         entityCull = o.entityCull;
         skipRedstoneLight = o.skipRedstoneLight;
+        hideRedstoneBlocks = o.hideRedstoneBlocks;
+        hideAllItems = o.hideAllItems;
+        hideFilteredItems = o.hideFilteredItems;
+        hiddenItems = o.hiddenItems == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(o.hiddenItems);
         redstoneScope = o.redstoneScope;
         redstoneMode = o.redstoneMode;
         pistonMode = o.pistonMode;

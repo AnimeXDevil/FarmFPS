@@ -36,3 +36,6 @@ Every push to `main` builds a jar and adds it to the single rolling pre-release 
 
 ## New commands
 `/farmfps redstone off|refresh|freeze`, `/farmfps scope farms|all`, `/farmfps pistons vanilla|snap|ghost`, `/farmfps light` (toggle light skipping). `/farmfps stats` shows which hooks fire; a counter stuck at 0 during a farm means that hook did not apply.
+
+## Farm mode
+`/farmfps farmmode` toggles everything below. `/farmfps hide redstone|drops|filter` toggle the parts. `/farmfps hide add <item>`, `hide hand` (item in your hand), `hide remove <item>`, `hide list`, `hide clear` manage the item filter: filtered items are not drawn as drops, and their placed block is drawn invisible. Hidden redstone types: pistons, observers, dispensers/droppers, hoppers, dust, repeaters, comparators, torches, lamps, note blocks, levers, buttons, plates, tripwire, targets, daylight sensors, powered/detector rails, crafters, copper bulbs, redstone blocks, iron doors and iron trapdoors. Hitboxes (F3+B) make dropped items draw normally so you can see where they are.

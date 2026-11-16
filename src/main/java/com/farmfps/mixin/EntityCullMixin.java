@@ -1,11 +1,13 @@
 package com.farmfps.mixin;
 
+import com.farmfps.client.HideManager;
 import com.farmfps.core.EntityBudget;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
 import com.farmfps.core.Stats;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.ItemEntity;
@@ -31,7 +33,12 @@ public abstract class EntityCullMixin {
     private void farmfps$cap(Entity entity, Frustum frustum, double x, double y, double z,
                              CallbackInfoReturnable<Boolean> cir) {
         int keep;
-        if (entity instanceof ItemEntity) {
+        if (entity instanceof ItemEntity item) {
+            if (farmfps$hideDrop(item)) {
+                Stats.rendersHidden++;
+                cir.setReturnValue(Boolean.FALSE);
+                return;
+            }
             keep = EntityBudget.itemKeep;
         } else if (entity instanceof ExperienceOrbEntity) {
             keep = EntityBudget.xpKeep;
@@ -47,6 +54,21 @@ public abstract class EntityCullMixin {
             Stats.rendersHidden++;
             cir.setReturnValue(Boolean.FALSE);
         }
+    }
+
+    /**
+     * Farm mode: hide all drops, or only the filtered item types. With hitboxes on (F3+B) drops are
+     * drawn normally so they can be inspected.
+     */
+    private static boolean farmfps$hideDrop(ItemEntity item) {
+        FarmConfig c = FarmConfig.INSTANCE;
+        if (!c.enabled || !(c.hideAllItems || c.hideFilteredItems)) {
+            return false;
+        }
+        if (MinecraftClient.getInstance().getEntityRenderDispatcher().shouldRenderHitboxes()) {
+            return false;
+        }
+        return c.hideAllItems || HideManager.isItemHidden(item.getStack().getItem());
     }
 
     /** Far mobs, minecarts, item frames and the like inside farm chunks (players are never hidden). */

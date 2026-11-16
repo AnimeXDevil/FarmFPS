@@ -41,6 +41,11 @@ public abstract class ItemWorldMixin {
         if (!(entity instanceof ItemEntity)) {
             return;
         }
+        if (FarmConfig.INSTANCE.enabled && FarmConfig.INSTANCE.hideAllItems) {
+            Stats.itemTicksSkipped++;
+            ci.cancel();
+            return;
+        }
         int keep = EntityBudget.itemKeep;
         if (keep >= EntityBudget.FULL || !FarmConfig.INSTANCE.aggressiveItems) {
             return;
