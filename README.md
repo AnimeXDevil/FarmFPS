@@ -4,12 +4,15 @@ Client-side farm lag fix for Minecraft 1.21.11 (Fabric). Install it on any serve
 
 | Feature | What it does |
 |---|---|
-| Piston snap | In chunks detected as active farms, moving piston blocks are drawn at their final position instead of animating. |
+| Pistons | Three modes: Vanilla; Snap (moving blocks jump to the end position, no ghosts); Ghost (moving blocks are not drawn at all until they land). Real block state and server logic are unchanged. |
 | Item cap (packet level) | Once your client holds N dropped items near you, further item spawn packets are ignored, so those entities are never created, ticked or drawn. The server still has them: hoppers collect them and you can pick them up. |
 | Hidden item skip | Items that are over the cap but already exist are not drawn and not simulated. |
 | XP orb cap | Excess XP orbs near you are not drawn. |
 | Farm particles and sounds | Inside a detected farm chunk, particles are hidden and the same sound plays at most once per tick. Elsewhere, per-tick budgets apply. |
-| Redstone visual lock | In farm chunks, rapid visual-only flips of observers, redstone dust, repeaters, comparators, lamps, copper bulbs and powered rails are held back; only the latest state per block is applied every few ticks. Cuts chunk rebuilds without ghost blocks. |
+| Redstone visuals | Vanilla / Refresh slowly / Frozen. Visual-only flips (observers, dust, repeaters, comparators, lamps, torches, bulbs, rails, piston bases, dispensers, hoppers, note blocks) skip the chunk redraw; Refresh redraws them every N ticks. Logic and collision are unaffected. |
+| Light updates | Optional: client light recalculation is skipped for those flips and for piston moves. Lighting near farms may look stale. |
+| Scope | "Farms (auto)" affects only chunks the detector marks as active; "Everywhere" applies to every redstone block and piston, even a single one. |
+| Far culling | Block entities and (non-player) entities beyond a set distance in the scope are not drawn. Pistons/observers baked into chunk meshes cannot be culled per block. |
 | Redstone sounds | In farm chunks, note block, dispenser, piston, comparator, gate and trapdoor sounds are muted. |
 | Far block culling | In farm chunks, block entities (chests, hoppers, signs, moving pistons) beyond a set distance are not drawn. |
 | Farm detector | Scores each chunk from piston movement, block-entity updates and particles. A single piston door or lamp never reaches the threshold. |
@@ -29,3 +32,7 @@ Client-side farm lag fix for Minecraft 1.21.11 (Fabric). Install it on any serve
 ## Releases
 
 Every push to `main` builds a jar and adds it to the single rolling pre-release **dev-builds** as `farmfps-<version>-build-<n>.jar`. The highest number is the newest.
+
+
+## New commands
+`/farmfps redstone off|refresh|freeze`, `/farmfps scope farms|all`, `/farmfps pistons vanilla|snap|ghost`, `/farmfps light` (toggle light skipping). `/farmfps stats` shows which hooks fire; a counter stuck at 0 during a farm means that hook did not apply.

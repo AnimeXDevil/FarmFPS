@@ -8,6 +8,7 @@
     "BlockUpdateLockMixin",
     "EntityCullMixin",
     "ItemSpawnMixin",
+    "LightSuppressMixin",
     "ItemTickMixin",
     "ParticleThrottleMixin",
     "PistonCullMixin",

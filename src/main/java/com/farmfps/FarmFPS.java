@@ -83,6 +83,24 @@ public class FarmFPS implements ClientModInitializer {
                             say(ctx, "Rendering up to " + FarmConfig.INSTANCE.maxItems + " dropped items");
                             return 1;
                         })))
+                .then(ClientCommandManager.literal("redstone")
+                    .then(ClientCommandManager.literal("off").executes(ctx -> setRedstone(ctx, 0)))
+                    .then(ClientCommandManager.literal("refresh").executes(ctx -> setRedstone(ctx, 1)))
+                    .then(ClientCommandManager.literal("freeze").executes(ctx -> setRedstone(ctx, 2))))
+                .then(ClientCommandManager.literal("scope")
+                    .then(ClientCommandManager.literal("farms").executes(ctx -> setScope(ctx, 0)))
+                    .then(ClientCommandManager.literal("all").executes(ctx -> setScope(ctx, 1))))
+                .then(ClientCommandManager.literal("pistons")
+                    .then(ClientCommandManager.literal("vanilla").executes(ctx -> setPistons(ctx, 0)))
+                    .then(ClientCommandManager.literal("snap").executes(ctx -> setPistons(ctx, 1)))
+                    .then(ClientCommandManager.literal("ghost").executes(ctx -> setPistons(ctx, 2))))
+                .then(ClientCommandManager.literal("light")
+                    .executes(ctx -> {
+                        FarmConfig.INSTANCE.skipRedstoneLight = !FarmConfig.INSTANCE.skipRedstoneLight;
+                        saveConfig();
+                        say(ctx, "Skip redstone light updates: " + (FarmConfig.INSTANCE.skipRedstoneLight ? "ON" : "OFF"));
+                        return 1;
+                    }))
                 .then(ClientCommandManager.literal("preset")
                     .then(ClientCommandManager.literal("balanced").executes(ctx -> applyPreset(ctx, 0)))
                     .then(ClientCommandManager.literal("megafarm").executes(ctx -> applyPreset(ctx, 1)))
@@ -95,8 +113,11 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "Item spawns dropped: " + Stats.spawnsDropped + " | hidden item ticks skipped: " + Stats.itemTicksSkipped);
                     say(ctx, "Item/XP draws hidden: " + Stats.rendersHidden + " | piston snaps: " + Stats.pistonSnaps);
                     say(ctx, "Particles hidden: " + Stats.particlesHidden + " | sounds muted: " + Stats.soundsMuted);
-                    say(ctx, "Redstone updates held back: " + Stats.redstoneHeld + " (waiting now: " + VisualLock.pendingCount()
-                        + ") | block entities culled: " + Stats.blockEntitiesCulled);
+                    say(ctx, "Redstone redraws skipped: " + Stats.redstoneHeld + " (waiting now: " + VisualLock.pendingCount()
+                        + ") | light updates skipped: " + Stats.lightSkipped);
+                    say(ctx, "Block entities culled: " + Stats.blockEntitiesCulled + " | far entities culled: " + Stats.entitiesCulled);
+                    say(ctx, "Scope: " + FarmConfig.SCOPE_NAMES[c.redstoneScope] + " | redstone: " + FarmConfig.REDSTONE_NAMES[c.redstoneMode]
+                        + " | pistons: " + FarmConfig.PISTON_NAMES[c.pistonMode]);
                     say(ctx, "A counter stuck at 0 during a farm means that hook did not apply on this version.");
                     return 1;
                 }))
@@ -109,6 +130,29 @@ public class FarmFPS implements ClientModInitializer {
         );
 
         LOGGER.info("FarmFPS initialized");
+    }
+
+    private static int setRedstone(CommandContext<FabricClientCommandSource> ctx, int mode) {
+        FarmConfig.INSTANCE.redstoneMode = mode;
+        saveConfig();
+        say(ctx, "Redstone visuals: " + FarmConfig.REDSTONE_NAMES[mode]
+            + " (scope: " + FarmConfig.SCOPE_NAMES[FarmConfig.INSTANCE.redstoneScope] + ")");
+        return 1;
+    }
+
+    private static int setScope(CommandContext<FabricClientCommandSource> ctx, int scope) {
+        FarmConfig.INSTANCE.redstoneScope = scope;
+        saveConfig();
+        say(ctx, "Redstone/piston scope: " + FarmConfig.SCOPE_NAMES[scope]);
+        return 1;
+    }
+
+    private static int setPistons(CommandContext<FabricClientCommandSource> ctx, int mode) {
+        FarmConfig.INSTANCE.pistonMode = mode;
+        saveConfig();
+        say(ctx, "Pistons: " + FarmConfig.PISTON_NAMES[mode]
+            + " (scope: " + FarmConfig.SCOPE_NAMES[FarmConfig.INSTANCE.redstoneScope] + ")");
+        return 1;
     }
 
     private static int applyPreset(CommandContext<FabricClientCommandSource> ctx, int preset) {

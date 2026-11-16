@@ -6,6 +6,7 @@ import com.farmfps.core.FarmDetector;
 import com.farmfps.core.Stats;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
+import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleEffect;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -36,6 +37,7 @@ public abstract class ParticleThrottleMixin {
         int cz = ((int) Math.floor(z)) >> 4;
         FarmDetector.record(cx, cz, FarmDetector.WEIGHT_PARTICLE);
         if ((c.hideFarmEffects && FarmDetector.isActive(cx, cz))
+            || (c.redstoneMode != 0 && c.redstoneScope == 1 && parameters instanceof DustParticleEffect)
             || (c.throttleParticles && !EffectCounters.allowParticle())) {
             Stats.particlesHidden++;
             cir.setReturnValue(null);

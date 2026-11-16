@@ -18,32 +18,43 @@ public final class FarmConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+    public static final String[] PRESET_NAMES = {"Balanced", "Mega-Farm", "Potato PC"};
+    public static final String[] SCOPE_NAMES = {"Farms (auto)", "Everywhere"};
+    public static final String[] REDSTONE_NAMES = {"Vanilla", "Refresh slowly", "Frozen"};
+    public static final String[] PISTON_NAMES = {"Vanilla", "Snap (no ghosts)", "Ghost (invisible)"};
+
     // Master switches
     public boolean enabled = true;
-    public boolean pistonSnap = true;
     public boolean capItems = true;
     public boolean capXpOrbs = true;
     public boolean throttleParticles = true;
     public boolean throttleSounds = true;
-    public boolean aggressiveItems = true;   // drop item spawns over the cap and skip ticking hidden items
-    public boolean hideFarmEffects = true;   // hide particles and matching sounds in detected farm chunks
-    public boolean actionBar = true;         // live status message while optimizing
-    public boolean redstoneLock = true;      // hold back rapid visual-only redstone state flips in farm chunks
-    public boolean muteRedstoneSounds = true; // mute note block / dispenser / piston / trapdoor sounds in farm chunks
-    public boolean blockEntityCull = true;   // stop drawing far block entities in farm chunks
+    public boolean aggressiveItems = true;    // drop item spawns over the cap and skip ticking hidden items
+    public boolean hideFarmEffects = true;    // hide particles and matching sounds in detected farm chunks
+    public boolean actionBar = true;          // live status message while optimizing
+    public boolean muteRedstoneSounds = true; // mute note block / dispenser / piston / trapdoor sounds
+    public boolean blockEntityCull = true;    // stop drawing far block entities
+    public boolean entityCull = true;         // stop drawing far non-player entities
+    public boolean skipRedstoneLight = true;  // no client light updates for redstone / piston state changes
+
+    // Where redstone and piston optimizations apply: 0 = detected farm chunks only, 1 = everywhere
+    public int redstoneScope = 0;
+    // Visual-only redstone state changes: 0 = vanilla, 1 = redraw a couple of times a second, 2 = frozen
+    public int redstoneMode = 2;
+    // Pistons: 0 = vanilla, 1 = snap to final position (no ghost blocks), 2 = ghost (moving blocks invisible)
+    public int pistonMode = 1;
 
     // Limits
-    public int maxItems = 200;            // rendered dropped items inside cullRadius
-    public int maxXpOrbs = 60;            // rendered XP orbs inside cullRadius
-    public int cullRadius = 48;           // blocks around the camera
+    public int maxItems = 200;            // dropped items allowed near you
+    public int maxXpOrbs = 60;            // XP orbs drawn near you
+    public int cullRadius = 48;           // blocks around the camera for item / XP caps
     public int maxParticlesPerTick = 250; // particles accepted per client tick
     public int maxSameSoundPerTick = 3;   // identical sounds allowed per client tick
     public int farmSensitivity = 20;      // activity score at which a chunk counts as an active farm
-    public int redstoneFlushTicks = 5;    // how often held-back redstone states are applied
-    public int blockEntityDistance = 32;  // blocks; block entities farther than this are not drawn in farm chunks
+    public int redstoneFlushTicks = 10;   // "refresh slowly" interval in ticks
+    public int blockEntityDistance = 32;  // block entities farther than this are not drawn
+    public int entityRenderDistance = 32; // other entities farther than this are not drawn
     public int preset = 0;                // 0 Balanced, 1 Mega-Farm, 2 Potato PC (display only)
-
-    public static final String[] PRESET_NAMES = {"Balanced", "Mega-Farm", "Potato PC"};
 
     public FarmConfig() {
     }
@@ -55,26 +66,33 @@ public final class FarmConfig {
         maxParticlesPerTick = clampInt(maxParticlesPerTick, 20, 2000);
         maxSameSoundPerTick = clampInt(maxSameSoundPerTick, 1, 10);
         farmSensitivity = clampInt(farmSensitivity, 5, 200);
-        redstoneFlushTicks = clampInt(redstoneFlushTicks, 2, 20);
+        redstoneFlushTicks = clampInt(redstoneFlushTicks, 2, 40);
         blockEntityDistance = clampInt(blockEntityDistance, 8, 96);
+        entityRenderDistance = clampInt(entityRenderDistance, 8, 96);
+        redstoneScope = clampInt(redstoneScope, 0, SCOPE_NAMES.length - 1);
+        redstoneMode = clampInt(redstoneMode, 0, REDSTONE_NAMES.length - 1);
+        pistonMode = clampInt(pistonMode, 0, PISTON_NAMES.length - 1);
         preset = clampInt(preset, 0, PRESET_NAMES.length - 1);
     }
 
-    /** Sets the limits for a preset. Toggles are left as the player set them. */
+    /** Sets the limits for a preset. Toggles and modes are left as the player set them. */
     public void applyPreset(int p) {
         switch (p) {
             case 1: // Mega-Farm
                 maxItems = 100; maxXpOrbs = 30; cullRadius = 64; maxParticlesPerTick = 120;
-                maxSameSoundPerTick = 2; farmSensitivity = 12; redstoneFlushTicks = 8; blockEntityDistance = 24;
+                maxSameSoundPerTick = 2; farmSensitivity = 12; redstoneFlushTicks = 10;
+                blockEntityDistance = 24; entityRenderDistance = 28;
                 break;
             case 2: // Potato PC
                 maxItems = 40; maxXpOrbs = 15; cullRadius = 48; maxParticlesPerTick = 60;
-                maxSameSoundPerTick = 1; farmSensitivity = 8; redstoneFlushTicks = 10; blockEntityDistance = 16;
+                maxSameSoundPerTick = 1; farmSensitivity = 8; redstoneFlushTicks = 20;
+                blockEntityDistance = 16; entityRenderDistance = 20;
                 break;
             default: // Balanced
                 p = 0;
                 maxItems = 200; maxXpOrbs = 60; cullRadius = 48; maxParticlesPerTick = 250;
-                maxSameSoundPerTick = 3; farmSensitivity = 20; redstoneFlushTicks = 5; blockEntityDistance = 32;
+                maxSameSoundPerTick = 3; farmSensitivity = 20; redstoneFlushTicks = 10;
+                blockEntityDistance = 32; entityRenderDistance = 32;
                 break;
         }
         preset = p;
@@ -87,7 +105,6 @@ public final class FarmConfig {
 
     private void copyFrom(FarmConfig o) {
         enabled = o.enabled;
-        pistonSnap = o.pistonSnap;
         capItems = o.capItems;
         capXpOrbs = o.capXpOrbs;
         throttleParticles = o.throttleParticles;
@@ -95,17 +112,22 @@ public final class FarmConfig {
         aggressiveItems = o.aggressiveItems;
         hideFarmEffects = o.hideFarmEffects;
         actionBar = o.actionBar;
+        muteRedstoneSounds = o.muteRedstoneSounds;
+        blockEntityCull = o.blockEntityCull;
+        entityCull = o.entityCull;
+        skipRedstoneLight = o.skipRedstoneLight;
+        redstoneScope = o.redstoneScope;
+        redstoneMode = o.redstoneMode;
+        pistonMode = o.pistonMode;
         maxItems = o.maxItems;
         maxXpOrbs = o.maxXpOrbs;
         cullRadius = o.cullRadius;
         maxParticlesPerTick = o.maxParticlesPerTick;
         maxSameSoundPerTick = o.maxSameSoundPerTick;
         farmSensitivity = o.farmSensitivity;
-        redstoneLock = o.redstoneLock;
-        muteRedstoneSounds = o.muteRedstoneSounds;
-        blockEntityCull = o.blockEntityCull;
         redstoneFlushTicks = o.redstoneFlushTicks;
         blockEntityDistance = o.blockEntityDistance;
+        entityRenderDistance = o.entityRenderDistance;
         preset = o.preset;
         clamp();
     }

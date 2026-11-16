@@ -5,6 +5,7 @@ import com.farmfps.core.FarmDetector;
 import com.farmfps.core.PistonSnap;
 import com.farmfps.core.Stats;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.util.math.BlockPos;
@@ -35,6 +36,20 @@ public abstract class PistonCullMixin {
                                             PistonBlockEntity blockEntity, CallbackInfo ci) {
         if (world.isClient() && FarmConfig.INSTANCE.enabled) {
             FarmDetector.record(pos.getX() >> 4, pos.getZ() >> 4, FarmDetector.WEIGHT_PISTON);
+        }
+    }
+
+    /**
+     * Ghost mode: the moving block is not drawn at all while the piston moves it; it simply
+     * appears at its destination when the move ends. The real block state is unaffected.
+     */
+    @Inject(method = "getPushedBlock()Lnet/minecraft/block/BlockState;", at = @At("HEAD"), cancellable = true)
+    private void farmfps$ghost(CallbackInfoReturnable<BlockState> cir) {
+        if (FarmConfig.INSTANCE.pistonMode == 2) {
+            BlockPos pos = ((BlockEntity) (Object) this).getPos();
+            if (PistonSnap.shouldSnap(pos.getX() >> 4, pos.getZ() >> 4)) {
+                cir.setReturnValue(Blocks.AIR.getDefaultState());
+            }
         }
     }
 

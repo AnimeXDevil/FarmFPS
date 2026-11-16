@@ -13,11 +13,11 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
- * Two-page settings screen with large toggles and sliders, no hover or keyboard needed, so it
+ * Three-page settings screen with large toggles and sliders, no hover or keyboard needed, so it
  * works with touch controls. Opens from Mod Menu (if installed) or with /farmfps.
  */
 public class ConfigScreen extends Screen {
-    private static final int PAGES = 2;
+    private static final int PAGES = 3;
 
     private final Screen parent;
     private final int page;
@@ -40,7 +40,7 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = this.page == 0 ? 5 : 7;
+        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : 7);
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
@@ -51,7 +51,10 @@ public class ConfigScreen extends Screen {
 
         if (this.page == 0) {
             toggle(left, y, colW, rowH, "Mod", () -> c.enabled, v -> c.enabled = v);
-            toggle(right, y, colW, rowH, "Piston snap", () -> c.pistonSnap, v -> c.pistonSnap = v);
+            addDrawableChild(ButtonWidget.builder(presetText(c), b -> {
+                c.applyPreset((c.preset + 1) % FarmConfig.PRESET_NAMES.length);
+                b.setMessage(presetText(c));
+            }).dimensions(right, y, colW, rowH).build());
             y += step;
             toggle(left, y, colW, rowH, "Cap items", () -> c.capItems, v -> c.capItems = v);
             toggle(right, y, colW, rowH, "Cap XP orbs", () -> c.capXpOrbs, v -> c.capXpOrbs = v);
@@ -61,18 +64,22 @@ public class ConfigScreen extends Screen {
             y += step;
             toggle(left, y, colW, rowH, "Fx budgets", () -> c.throttleParticles && c.throttleSounds,
                 v -> { c.throttleParticles = v; c.throttleSounds = v; });
-            addDrawableChild(ButtonWidget.builder(presetText(c), b -> {
-                c.applyPreset((c.preset + 1) % FarmConfig.PRESET_NAMES.length);
-                b.setMessage(presetText(c));
-            }).dimensions(right, y, colW, rowH).build());
-            y += step;
-        } else {
-            toggle(left, y, colW, rowH, "Redstone lock", () -> c.redstoneLock, v -> c.redstoneLock = v);
-            toggle(right, y, colW, rowH, "Redstone sounds", () -> c.muteRedstoneSounds, v -> c.muteRedstoneSounds = v);
-            y += step;
-            toggle(left, y, colW, rowH, "Cull far blocks", () -> c.blockEntityCull, v -> c.blockEntityCull = v);
             toggle(right, y, colW, rowH, "Action bar", () -> c.actionBar, v -> c.actionBar = v);
             y += step;
+        } else if (this.page == 1) {
+            cycle(left, y, colW, rowH, "Scope", FarmConfig.SCOPE_NAMES, () -> c.redstoneScope, v -> c.redstoneScope = v);
+            cycle(right, y, colW, rowH, "Redstone", FarmConfig.REDSTONE_NAMES, () -> c.redstoneMode, v -> c.redstoneMode = v);
+            y += step;
+            cycle(left, y, colW, rowH, "Pistons", FarmConfig.PISTON_NAMES, () -> c.pistonMode, v -> c.pistonMode = v);
+            toggle(right, y, colW, rowH, "Skip light", () -> c.skipRedstoneLight, v -> c.skipRedstoneLight = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Mute redstone snd", () -> c.muteRedstoneSounds, v -> c.muteRedstoneSounds = v);
+            toggle(right, y, colW, rowH, "Cull far blocks", () -> c.blockEntityCull, v -> c.blockEntityCull = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Cull far mobs", () -> c.entityCull, v -> c.entityCull = v);
+            slider(right, y, colW, rowH, "Refresh ticks", 2, 40, c.redstoneFlushTicks, v -> c.redstoneFlushTicks = v);
+            y += step;
+        } else {
             slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);
             slider(right, y, colW, rowH, "Max XP orbs", 10, 1000, c.maxXpOrbs, v -> c.maxXpOrbs = v);
             y += step;
@@ -82,8 +89,8 @@ public class ConfigScreen extends Screen {
             slider(left, y, colW, rowH, "Same sound/tick", 1, 10, c.maxSameSoundPerTick, v -> c.maxSameSoundPerTick = v);
             slider(right, y, colW, rowH, "Farm trigger", 5, 200, c.farmSensitivity, v -> c.farmSensitivity = v);
             y += step;
-            slider(left, y, colW, rowH, "Redstone ticks", 2, 20, c.redstoneFlushTicks, v -> c.redstoneFlushTicks = v);
-            slider(right, y, colW, rowH, "Far block dist", 8, 96, c.blockEntityDistance, v -> c.blockEntityDistance = v);
+            slider(left, y, colW, rowH, "Far block dist", 8, 96, c.blockEntityDistance, v -> c.blockEntityDistance = v);
+            slider(right, y, colW, rowH, "Far mob dist", 8, 96, c.entityRenderDistance, v -> c.entityRenderDistance = v);
             y += step;
         }
 
@@ -94,6 +101,14 @@ public class ConfigScreen extends Screen {
                 this.client.setScreen(new ConfigScreen(this.parent, (this.page + 1) % PAGES));
             }
         }).dimensions(right, y, colW, rowH).build());
+    }
+
+    private void cycle(int x, int y, int w, int h, String name, String[] names,
+                       java.util.function.IntSupplier get, IntConsumer set) {
+        addDrawableChild(ButtonWidget.builder(Text.literal(name + ": " + names[get.getAsInt()]), b -> {
+            set.accept((get.getAsInt() + 1) % names.length);
+            b.setMessage(Text.literal(name + ": " + names[get.getAsInt()]));
+        }).dimensions(x, y, w, h).build());
     }
 
     private static Text presetText(FarmConfig c) {

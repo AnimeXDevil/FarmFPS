@@ -7,137 +7,167 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ComparatorBlock;
+import net.minecraft.block.DispenserBlock;
+import net.minecraft.block.HopperBlock;
+import net.minecraft.block.NoteBlock;
 import net.minecraft.block.ObserverBlock;
+import net.minecraft.block.PistonBlock;
+import net.minecraft.block.PistonExtensionBlock;
+import net.minecraft.block.PistonHeadBlock;
 import net.minecraft.block.PoweredRailBlock;
 import net.minecraft.block.RedstoneLampBlock;
+import net.minecraft.block.RedstoneTorchBlock;
 import net.minecraft.block.RedstoneWireBlock;
 import net.minecraft.block.RepeaterBlock;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import java.util.Arrays;
 
 /**
- * Redstone visual lock. Observers, dust, repeaters, comparators, lamps, copper bulbs and powered
- * rails flip state many times a second in farms, and every flip dirties a chunk section and
- * forces a mesh rebuild. Inside a chunk detected as an active farm, a flip of one of these blocks
- * to another state of the same block is held back, and only the latest state per position is
- * applied every few ticks. Any other kind of update to that position applies immediately and
- * discards the held one, so the client never shows a block that is wrong for longer than one
- * flush interval and never keeps a stale state.
+ * Decides, for every block change on the client world, whether to skip its redraw and/or its light
+ * update. The real block state is always applied, so collision and logic stay correct; only the
+ * visual work is skipped.
  *
- * Only blocks whose state is purely visual are included. Trapdoors, doors and gates are not,
- * because their open state changes client-side collision.
+ * Redraw skip: the vanilla NO_REDRAW flag is added to visual-only changes (an observer flipping,
+ * dust changing power, a lamp toggling, a piston base extending...). The chunk mesh keeps showing
+ * the old look until something else redraws that section. In "refresh" mode the affected sections
+ * are redrawn a few times per second instead of never.
+ *
+ * Light skip: the client light engine is not run for redstone flips and piston moves, which is
+ * the most expensive part of those changes. Lighting near a farm can look stale as a result.
  */
 public final class VisualLock {
-    private static final int SIZE = 2048; // power of two
+    public static final int NO_REDRAW = 4;
+    public static final int MOVED = 64;
+    public static final int WANT_NO_REDRAW = 1;
+    public static final int WANT_NO_LIGHT = 2;
+
+    /** True while MixinWorld re-issues a change with adjusted flags; stops recursion. */
+    public static boolean reentry;
+    /** True only while a change we flagged is being applied; read by the light hook. */
+    public static boolean suppressLight;
+
+    private static final int SIZE = 512; // power of two
     private static final int MASK = SIZE - 1;
     private static final long EMPTY = Long.MIN_VALUE;
-
-    private static final long[] KEYS = new long[SIZE];
-    private static final BlockState[] STATES = new BlockState[SIZE];
-    private static final int[] FLAGS = new int[SIZE];
-
-    private static int pending;
-    private static boolean flushing;
+    private static final long[] SECTIONS = new long[SIZE];
+    private static final long[] REPS = new long[SIZE];
+    private static int dirty;
 
     static {
-        Arrays.fill(KEYS, EMPTY);
+        Arrays.fill(SECTIONS, EMPTY);
     }
 
     private VisualLock() {
     }
 
-    private static int slot(long key) {
-        int h = (int) (key ^ (key >>> 32)) * 0x9E3779B1;
-        return (h >>> 21) & MASK;
-    }
-
-    /** Returns true if the update was held back and the vanilla handler must not run now. */
-    public static boolean intercept(ClientWorld world, BlockPos pos, BlockState state, int flags) {
-        if (flushing) {
-            return false;
-        }
+    /** Returns a bit mask of WANT_* flags, or 0 to leave the change alone. */
+    public static int decide(World world, BlockPos pos, BlockState state, int flags) {
         FarmConfig c = FarmConfig.INSTANCE;
         if (!c.enabled) {
-            return false;
+            return 0;
         }
         int cx = pos.getX() >> 4;
         int cz = pos.getZ() >> 4;
         FarmDetector.record(cx, cz, FarmDetector.WEIGHT_BLOCK_UPDATE);
+        if (!FarmDetector.shouldAffect(cx, cz)) {
+            return 0;
+        }
 
-        long key = pos.asLong();
-        int slot = slot(key);
+        Block newBlock = state.getBlock();
+        BlockState old = world.getBlockState(pos);
+        Block oldBlock = old.getBlock();
+        boolean flip = oldBlock == newBlock && old != state && isVisualOnly(newBlock);
 
-        if (c.redstoneLock && isVisualOnly(state.getBlock()) && FarmDetector.isActive(cx, cz)) {
-            BlockState current = world.getBlockState(pos);
-            if (current.getBlock() == state.getBlock() && current != state
-                && (KEYS[slot] == EMPTY || KEYS[slot] == key)) {
-                if (KEYS[slot] == EMPTY) {
-                    pending++;
-                }
-                KEYS[slot] = key;
-                STATES[slot] = state;
-                FLAGS[slot] = flags;
-                Stats.redstoneHeld++;
-                return true;
+        int mask = 0;
+        if (flip && c.redstoneMode != 0 && (flags & NO_REDRAW) == 0) {
+            mask |= WANT_NO_REDRAW;
+            Stats.redstoneHeld++;
+            if (c.redstoneMode == 1) {
+                markDirty(pos);
             }
         }
-
-        // Applied normally: a held update for this exact position is now out of date.
-        if (KEYS[slot] == key) {
-            KEYS[slot] = EMPTY;
-            STATES[slot] = null;
-            pending--;
+        if (c.skipRedstoneLight
+            && (flip || (flags & MOVED) != 0 || isPistonPart(newBlock) || isPistonPart(oldBlock))) {
+            mask |= WANT_NO_LIGHT;
         }
-        return false;
+        return mask;
     }
 
-    /** Applies every held update (latest state per position). Call every few ticks. */
-    public static void flush(ClientWorld world) {
-        if (pending <= 0) {
+    private static void markDirty(BlockPos pos) {
+        int x = pos.getX() >> 4;
+        int y = pos.getY() >> 4;
+        int z = pos.getZ() >> 4;
+        long section = (((long) x & 0x3FFFFFL) << 42) | (((long) z & 0x3FFFFFL) << 20) | ((long) y & 0xFFFFFL);
+        int h = (int) (section ^ (section >>> 32)) * 0x9E3779B1;
+        int slot = (h >>> 23) & MASK;
+        for (int i = 0; i < 4; i++) {
+            int s = (slot + i) & MASK;
+            if (SECTIONS[s] == section) {
+                return;
+            }
+            if (SECTIONS[s] == EMPTY) {
+                SECTIONS[s] = section;
+                REPS[s] = pos.asLong();
+                dirty++;
+                return;
+            }
+        }
+        // Table region full: skip; the section redraws on its next natural update.
+    }
+
+    /** Redraws every section that had skipped changes. Safe to call when nothing is pending. */
+    public static void refresh(World world) {
+        if (dirty <= 0) {
             return;
         }
-        flushing = true;
-        try {
-            for (int i = 0; i < SIZE; i++) {
-                long key = KEYS[i];
-                if (key == EMPTY) {
-                    continue;
-                }
-                BlockState state = STATES[i];
-                int flags = FLAGS[i];
-                KEYS[i] = EMPTY;
-                STATES[i] = null;
-                BlockPos pos = BlockPos.fromLong(key);
-                // Skip if the chunk unloaded or the block was replaced in the meantime.
-                if (world.getBlockState(pos).getBlock() == state.getBlock()) {
-                    world.handleBlockUpdate(pos, state, flags);
-                }
+        BlockState air = Blocks.AIR.getDefaultState();
+        for (int i = 0; i < SIZE; i++) {
+            if (SECTIONS[i] == EMPTY) {
+                continue;
             }
-            pending = 0;
-        } finally {
-            flushing = false;
+            long rep = REPS[i];
+            SECTIONS[i] = EMPTY;
+            BlockPos pos = BlockPos.fromLong(rep);
+            BlockState current = world.getBlockState(pos);
+            if (!current.isAir()) {
+                world.updateListeners(pos, air, current, 2);
+            }
         }
+        dirty = 0;
     }
 
     public static void clear() {
-        Arrays.fill(KEYS, EMPTY);
-        Arrays.fill(STATES, null);
-        pending = 0;
+        Arrays.fill(SECTIONS, EMPTY);
+        dirty = 0;
     }
 
     public static int pendingCount() {
-        return pending;
+        return dirty;
     }
 
+    private static boolean isPistonPart(Block b) {
+        return b instanceof PistonBlock || b instanceof PistonHeadBlock || b instanceof PistonExtensionBlock;
+    }
+
+    /**
+     * Blocks whose state flips are purely visual on the client. Trapdoors, doors, gates, levers and
+     * buttons are deliberately excluded: their state affects collision or player interaction.
+     */
     private static boolean isVisualOnly(Block b) {
         return b instanceof ObserverBlock
             || b instanceof RedstoneWireBlock
             || b instanceof RepeaterBlock
             || b instanceof ComparatorBlock
             || b instanceof RedstoneLampBlock
+            || b instanceof RedstoneTorchBlock
             || b instanceof PoweredRailBlock
+            || b instanceof PistonBlock
+            || b instanceof PistonHeadBlock
+            || b instanceof DispenserBlock
+            || b instanceof HopperBlock
+            || b instanceof NoteBlock
             || b == Blocks.COPPER_BULB
             || b == Blocks.EXPOSED_COPPER_BULB
             || b == Blocks.WEATHERED_COPPER_BULB

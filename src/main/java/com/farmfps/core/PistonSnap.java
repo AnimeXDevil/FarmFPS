@@ -10,6 +10,6 @@ public final class PistonSnap {
 
     public static boolean shouldSnap(int chunkX, int chunkZ) {
         FarmConfig c = FarmConfig.INSTANCE;
-        return c.enabled && c.pistonSnap && FarmDetector.isActive(chunkX, chunkZ);
+        return c.enabled && c.pistonMode != 0 && FarmDetector.shouldAffect(chunkX, chunkZ);
     }
 }

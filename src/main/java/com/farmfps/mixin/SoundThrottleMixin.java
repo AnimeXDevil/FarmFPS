@@ -35,7 +35,9 @@ public abstract class SoundThrottleMixin {
         if (!farm && !c.throttleSounds) {
             return;
         }
-        if (farm && c.muteRedstoneSounds && EffectCounters.isRedstoneNoise(sound.getId().getPath())) {
+        if (c.muteRedstoneSounds
+            && FarmDetector.shouldAffect(((int) Math.floor(sound.getX())) >> 4, ((int) Math.floor(sound.getZ())) >> 4)
+            && EffectCounters.isRedstoneNoise(sound.getId().getPath())) {
             Stats.soundsMuted++;
             cir.setReturnValue(SoundSystem.PlayResult.NOT_STARTED);
             return;

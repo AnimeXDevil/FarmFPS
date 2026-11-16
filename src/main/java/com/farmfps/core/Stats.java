@@ -11,14 +11,16 @@ public final class Stats {
     public static long pistonSnaps;       // piston animation lookups snapped to the end state
     public static long particlesHidden;   // particles dropped
     public static long soundsMuted;       // sounds dropped
-    public static long redstoneHeld;      // visual-only block updates held back and merged
+    public static long redstoneHeld;      // visual-only block changes whose redraw was skipped
+    public static long lightSkipped;      // client light updates skipped
+    public static long entitiesCulled;    // far entities not drawn
     public static long blockEntitiesCulled; // block entity draw checks answered "too far"
 
     private Stats() {
     }
 
     public static long total() {
-        return spawnsDropped + itemTicksSkipped + rendersHidden + pistonSnaps + particlesHidden + soundsMuted + redstoneHeld + blockEntitiesCulled;
+        return spawnsDropped + itemTicksSkipped + rendersHidden + pistonSnaps + particlesHidden + soundsMuted + redstoneHeld + lightSkipped + entitiesCulled + blockEntitiesCulled;
     }
 
     public static void reset() {
@@ -29,6 +31,8 @@ public final class Stats {
         particlesHidden = 0;
         soundsMuted = 0;
         redstoneHeld = 0;
+        lightSkipped = 0;
+        entitiesCulled = 0;
         blockEntitiesCulled = 0;
     }
 }

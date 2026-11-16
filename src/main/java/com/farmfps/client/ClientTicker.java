@@ -49,17 +49,17 @@ public final class ClientTicker {
         }
 
         FarmConfig c = FarmConfig.INSTANCE;
-        if (!c.enabled || !c.redstoneLock) {
-            VisualLock.flush(world); // never leave held-back states behind
+        if (!c.enabled || c.redstoneMode != 1) {
+            VisualLock.refresh(world); // never leave skipped redraws behind
         }
         if (!c.enabled) {
             EntityBudget.reset();
             return;
         }
 
-        if (++lockTicks >= c.redstoneFlushTicks) {
+        if (c.redstoneMode == 1 && ++lockTicks >= c.redstoneFlushTicks) {
             lockTicks = 0;
-            VisualLock.flush(world);
+            VisualLock.refresh(world);
         }
 
         if (++scanTicks >= SCAN_INTERVAL_TICKS) {
@@ -102,7 +102,7 @@ public final class ClientTicker {
             player.sendMessage(Text.literal("FarmFPS | items " + EntityBudget.itemsNear + "/" + c.maxItems
                 + " | blocked: " + Stats.spawnsDropped + " items, "
                 + Stats.particlesHidden + " particles, " + Stats.soundsMuted + " sounds"
-                + " | redstone held " + Stats.redstoneHeld), true);
+                + " | redraws skipped " + Stats.redstoneHeld + ", light skipped " + Stats.lightSkipped), true);
         }
     }
 }

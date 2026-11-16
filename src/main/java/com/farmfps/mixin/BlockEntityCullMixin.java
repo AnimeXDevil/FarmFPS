@@ -31,7 +31,7 @@ public interface BlockEntityCullMixin {
             return;
         }
         BlockPos pos = blockEntity.getPos();
-        if (!FarmDetector.isActive(pos.getX() >> 4, pos.getZ() >> 4)) {
+        if (!FarmDetector.shouldAffect(pos.getX() >> 4, pos.getZ() >> 4)) {
             return;
         }
         double dx = pos.getX() + 0.5 - cameraPos.x;

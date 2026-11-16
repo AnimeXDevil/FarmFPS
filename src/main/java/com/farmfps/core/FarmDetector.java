@@ -57,6 +57,14 @@ public final class FarmDetector {
         return KEYS[i] == k && SCORES[i] >= FarmConfig.INSTANCE.farmSensitivity;
     }
 
+    /**
+     * True if redstone / piston / block-entity / entity optimizations apply in this chunk: always
+     * when the scope is "everywhere", otherwise only inside a detected farm chunk.
+     */
+    public static boolean shouldAffect(int chunkX, int chunkZ) {
+        return FarmConfig.INSTANCE.redstoneScope == 1 || isActive(chunkX, chunkZ);
+    }
+
     public static int activeCount() {
         int n = 0;
         int threshold = FarmConfig.INSTANCE.farmSensitivity;
