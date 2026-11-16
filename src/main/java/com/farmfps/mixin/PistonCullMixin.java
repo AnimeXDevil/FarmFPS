@@ -35,6 +35,7 @@ public abstract class PistonCullMixin {
     private static void farmfps$trackPiston(World world, BlockPos pos, BlockState state,
                                             PistonBlockEntity blockEntity, CallbackInfo ci) {
         if (world.isClient() && FarmConfig.INSTANCE.enabled) {
+            Stats.seenPistonTicks++;
             FarmDetector.record(pos.getX() >> 4, pos.getZ() >> 4, FarmDetector.WEIGHT_PISTON);
         }
     }

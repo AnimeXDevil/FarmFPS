@@ -20,6 +20,9 @@ public abstract class LightSuppressMixin {
 
     @Inject(method = "checkBlock(Lnet/minecraft/util/math/BlockPos;)V", at = @At("HEAD"), cancellable = true)
     private void farmfps$skipLight(BlockPos pos, CallbackInfo ci) {
+        if (MinecraftClient.getInstance().isOnThread()) {
+            Stats.seenLightChecks++;
+        }
         if (VisualLock.suppressLight && MinecraftClient.getInstance().isOnThread()) {
             Stats.lightSkipped++;
             ci.cancel();

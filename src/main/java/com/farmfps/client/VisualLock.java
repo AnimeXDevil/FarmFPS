@@ -74,6 +74,7 @@ public final class VisualLock {
         if (!FarmDetector.shouldAffect(cx, cz)) {
             return 0;
         }
+        Stats.seenFarmChanges++;
 
         Block newBlock = state.getBlock();
         BlockState old = world.getBlockState(pos);

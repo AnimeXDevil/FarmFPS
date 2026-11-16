@@ -39,6 +39,7 @@ public abstract class ItemSpawnMixin {
         if (!MinecraftClient.getInstance().isOnThread()) {
             return;
         }
+        Stats.seenItemPackets++;
         if (EntityBudget.shouldDropItemSpawn(packet.getX(), packet.getY(), packet.getZ())) {
             Stats.spawnsDropped++;
             ci.cancel();

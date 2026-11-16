@@ -16,6 +16,13 @@ public final class Stats {
     public static long entitiesCulled;    // far entities not drawn
     public static long blockEntitiesCulled; // block entity draw checks answered "too far"
 
+    // Diagnostics: how often each hook was reached at all (separate from the "did something" counters).
+    public static long seenBlockChanges;   // client World.setBlockState calls
+    public static long seenFarmChanges;    // ...of which inside the active scope
+    public static long seenLightChecks;    // LightingProvider.checkBlock calls on the client thread
+    public static long seenItemPackets;    // item spawn packets seen on the client thread
+    public static long seenPistonTicks;    // client piston block-entity ticks
+
     private Stats() {
     }
 
@@ -34,5 +41,10 @@ public final class Stats {
         lightSkipped = 0;
         entitiesCulled = 0;
         blockEntitiesCulled = 0;
+        seenBlockChanges = 0;
+        seenFarmChanges = 0;
+        seenLightChecks = 0;
+        seenItemPackets = 0;
+        seenPistonTicks = 0;
     }
 }

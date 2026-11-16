@@ -1,6 +1,7 @@
 package com.farmfps.mixin;
 
 import com.farmfps.client.VisualLock;
+import com.farmfps.core.Stats;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -32,6 +33,7 @@ public abstract class BlockUpdateLockMixin {
         if (!self.isClient()) {
             return;
         }
+        Stats.seenBlockChanges++;
         int mask = VisualLock.decide(self, pos, state, flags);
         if (mask == 0) {
             return;
