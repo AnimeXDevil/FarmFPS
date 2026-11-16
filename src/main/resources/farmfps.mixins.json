@@ -4,6 +4,9 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "BlockEntityCullMixin",
+    "ChunkLightMixin",
+    "PistonPushMixin",
+    "SoundEventMixin",
     "BlockEntityUpdateMixin",
     "BlockUpdateLockMixin",
     "EntityCullMixin",
