@@ -41,7 +41,7 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : (this.page == 2 ? 8 : 5));
+        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : (this.page == 2 ? 8 : 6));
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
@@ -102,6 +102,9 @@ public class ConfigScreen extends Screen {
                     this.client.setScreen(new PickerScreen(this, PickerScreen.Kind.MOBS));
                 }
             }).dimensions(right, y, colW, rowH).build());
+            y += step;
+            toggle(left, y, colW, rowH, "Flat light farms", () -> c.flatLightNearFarms, v -> c.flatLightNearFarms = v);
+            toggle(right, y, colW, rowH, "Action bar", () -> c.actionBar, v -> c.actionBar = v);
             y += step;
         } else {
             slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);

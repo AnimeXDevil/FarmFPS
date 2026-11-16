@@ -11,6 +11,7 @@
     "BlockEntityUpdateMixin",
     "BlockUpdateLockMixin",
     "EntityCullMixin",
+    "FlatLightMixin",
     "ItemSpawnMixin",
     "ItemWorldMixin",
     "LightSuppressMixin",

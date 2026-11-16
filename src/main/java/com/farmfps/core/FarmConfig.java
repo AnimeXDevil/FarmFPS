@@ -45,6 +45,7 @@ public final class FarmConfig {
     public boolean hideMovingBlocks = false;   // blocks being pushed by pistons are not drawn while they move
     public boolean muteAllRedstoneSounds = false; // every redstone-block sound except levers, everywhere
     public boolean solidFaceFix = true;        // keep full-size redstone blocks drawn so neighbour faces have no holes
+    public boolean flatLightNearFarms = true;  // smooth lighting off while a farm is active
     public boolean hideFish = false;           // cod, salmon, pufferfish, tropical fish are not drawn
     public boolean hideFilteredMobs = true;    // entity types in hiddenMobs are not drawn
     public java.util.List<String> hiddenMobs = new java.util.ArrayList<>();
@@ -138,6 +139,7 @@ public final class FarmConfig {
         muteAllRedstoneSounds = o.muteAllRedstoneSounds;
         solidFaceFix = o.solidFaceFix;
         hideFish = o.hideFish;
+        flatLightNearFarms = o.flatLightNearFarms;
         hideFilteredMobs = o.hideFilteredMobs;
         hiddenMobs = o.hiddenMobs == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(o.hiddenMobs);
         redstoneScope = o.redstoneScope;

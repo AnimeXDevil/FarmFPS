@@ -21,11 +21,14 @@ import java.util.ArrayList;
  * The render-path mixins only read the primitive results.
  */
 public final class ClientTicker {
-    private static final int SCAN_INTERVAL_TICKS = 5;      // 4 scans per second
+    private static final int SCAN_INTERVAL_TICKS = 10;     // 2 scans per second
     private static final int STATUS_INTERVAL_TICKS = 10;   // action bar refresh
     private static int scanTicks;
     private static int statusTicks;
     private static int lockTicks;
+    private static int flatHold;
+    /** True while a farm is active (plus a 30 s hold so meshes are not built with mixed lighting). */
+    public static boolean flatLight;
     private static long lastStatsTotal;
     private static final ArrayList<Entity> DISCARD = new ArrayList<>(512);
     private static final int MAX_DISCARDS_PER_SCAN = 300;
@@ -39,6 +42,12 @@ public final class ClientTicker {
 
     public static void onEndTick(MinecraftClient client) {
         FarmDetector.tick();
+        if (FarmDetector.activeCount() > 0) {
+            flatHold = 600;
+        } else if (flatHold > 0) {
+            flatHold--;
+        }
+        flatLight = flatHold > 0;
 
         ClientWorld world = client.world;
         ClientPlayerEntity player = client.player;
