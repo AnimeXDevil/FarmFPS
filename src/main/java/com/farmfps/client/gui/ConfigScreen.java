@@ -41,7 +41,7 @@ public class ConfigScreen extends Screen {
         int colW = Math.max(100, Math.min(160, (this.width - 24 - gap) / 2));
         int left = (this.width - (colW * 2 + gap)) / 2;
         int right = left + colW + gap;
-        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : (this.page == 2 ? 8 : 6));
+        int rows = this.page == 0 ? 5 : (this.page == 1 ? 5 : (this.page == 2 ? 8 : 7));
         int rowH = Math.max(20, Math.min(26, (this.height - 40) / rows - 4));
         int step = rowH + 4;
         int y = 28;
@@ -105,6 +105,9 @@ public class ConfigScreen extends Screen {
             y += step;
             toggle(left, y, colW, rowH, "Flat light farms", () -> c.flatLightNearFarms, v -> c.flatLightNearFarms = v);
             toggle(right, y, colW, rowH, "Action bar", () -> c.actionBar, v -> c.actionBar = v);
+            y += step;
+            toggle(left, y, colW, rowH, "Freeze fast fluids", () -> c.freezeFluids, v -> c.freezeFluids = v);
+            slider(right, y, colW, rowH, "Anim (normal)", 0, 8, c.textureAnimSkipNormal, v -> c.textureAnimSkipNormal = v);
             y += step;
         } else {
             slider(left, y, colW, rowH, "Max items", 10, 2000, c.maxItems, v -> c.maxItems = v);

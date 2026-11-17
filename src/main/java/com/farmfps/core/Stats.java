@@ -17,6 +17,8 @@ public final class Stats {
     public static long pistonPushSkipped;  // far piston entity-push searches skipped
     public static long textureTicksSkipped; // animated texture ticks skipped
     public static long itemsDiscarded;     // existing excess items removed from the client world
+    public static long pistonFinished;     // piston moves finished instantly on the client
+    public static long fluidFrozen;        // fluid redraws skipped in churning chunks
     public static long blockEntitiesCulled; // block entity draw checks answered "too far"
 
     // Diagnostics: how often each hook was reached at all (separate from the "did something" counters).
@@ -30,7 +32,7 @@ public final class Stats {
     }
 
     public static long total() {
-        return spawnsDropped + itemTicksSkipped + rendersHidden + pistonSnaps + particlesHidden + soundsMuted + redstoneHeld + lightSkipped + entitiesCulled + blockEntitiesCulled + pistonPushSkipped + textureTicksSkipped + itemsDiscarded;
+        return spawnsDropped + itemTicksSkipped + rendersHidden + pistonSnaps + particlesHidden + soundsMuted + redstoneHeld + lightSkipped + entitiesCulled + blockEntitiesCulled + pistonPushSkipped + textureTicksSkipped + itemsDiscarded + pistonFinished + fluidFrozen;
     }
 
     public static void reset() {
@@ -47,6 +49,8 @@ public final class Stats {
         pistonPushSkipped = 0;
         textureTicksSkipped = 0;
         itemsDiscarded = 0;
+        pistonFinished = 0;
+        fluidFrozen = 0;
         seenBlockChanges = 0;
         seenFarmChanges = 0;
         seenLightChecks = 0;

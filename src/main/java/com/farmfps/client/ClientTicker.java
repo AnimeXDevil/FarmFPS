@@ -4,6 +4,7 @@ import com.farmfps.core.EffectCounters;
 import com.farmfps.core.EntityBudget;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
+import com.farmfps.core.FluidChurn;
 import com.farmfps.core.Stats;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -42,6 +43,7 @@ public final class ClientTicker {
 
     public static void onEndTick(MinecraftClient client) {
         FarmDetector.tick();
+        FluidChurn.tick();
         if (FarmDetector.activeCount() > 0) {
             flatHold = 600;
         } else if (flatHold > 0) {
@@ -55,6 +57,7 @@ public final class ClientTicker {
             EntityBudget.reset();
             FarmDetector.clear();
             VisualLock.clear();
+            FluidChurn.clear();
             lockTicks = 0;
             scanTicks = 0;
             statusTicks = 0;
@@ -62,7 +65,8 @@ public final class ClientTicker {
         }
 
         FarmConfig c = FarmConfig.INSTANCE;
-        if (!c.enabled || c.redstoneMode != 1) {
+        boolean slowRefresh = c.enabled && (c.redstoneMode == 1 || c.freezeFluids);
+        if (!slowRefresh) {
             VisualLock.refresh(world); // never leave skipped redraws behind
         }
         if (!c.enabled) {
@@ -70,7 +74,7 @@ public final class ClientTicker {
             return;
         }
 
-        if (c.redstoneMode == 1 && ++lockTicks >= c.redstoneFlushTicks) {
+        if (slowRefresh && ++lockTicks >= (c.redstoneMode == 1 ? c.redstoneFlushTicks : 40)) {
             lockTicks = 0;
             VisualLock.refresh(world);
         }

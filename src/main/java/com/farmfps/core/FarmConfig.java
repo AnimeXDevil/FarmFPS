@@ -46,6 +46,10 @@ public final class FarmConfig {
     public boolean muteAllRedstoneSounds = false; // every redstone-block sound except levers, everywhere
     public boolean solidFaceFix = true;        // keep full-size redstone blocks drawn so neighbour faces have no holes
     public boolean flatLightNearFarms = true;  // smooth lighting off while a farm is active
+    public boolean freezeFluids = true;        // fast-changing water/lava stops re-meshing (still pools stay normal)
+    public int fluidChurnThreshold = 24;       // fluid changes (decaying) in a chunk before it counts as churning
+    public int textureAnimSkipNormal = 1;      // animated textures: 1 tick in (n+1) when no farm is active; 0 = off
+    public boolean skipDisplayTicks = true;    // ambient block particles every second tick
     public boolean hideFish = false;           // cod, salmon, pufferfish, tropical fish are not drawn
     public boolean hideFilteredMobs = true;    // entity types in hiddenMobs are not drawn
     public java.util.List<String> hiddenMobs = new java.util.ArrayList<>();
@@ -84,6 +88,8 @@ public final class FarmConfig {
         blockEntityDistance = clampInt(blockEntityDistance, 8, 96);
         entityRenderDistance = clampInt(entityRenderDistance, 8, 96);
         textureAnimSkip = clampInt(textureAnimSkip, 0, 8);
+        textureAnimSkipNormal = clampInt(textureAnimSkipNormal, 0, 8);
+        fluidChurnThreshold = clampInt(fluidChurnThreshold, 4, 200);
         redstoneScope = clampInt(redstoneScope, 0, SCOPE_NAMES.length - 1);
         redstoneMode = clampInt(redstoneMode, 0, REDSTONE_NAMES.length - 1);
         pistonMode = clampInt(pistonMode, 0, PISTON_NAMES.length - 1);
@@ -139,6 +145,10 @@ public final class FarmConfig {
         muteAllRedstoneSounds = o.muteAllRedstoneSounds;
         solidFaceFix = o.solidFaceFix;
         hideFish = o.hideFish;
+        freezeFluids = o.freezeFluids;
+        fluidChurnThreshold = o.fluidChurnThreshold;
+        textureAnimSkipNormal = o.textureAnimSkipNormal;
+        skipDisplayTicks = o.skipDisplayTicks;
         flatLightNearFarms = o.flatLightNearFarms;
         hideFilteredMobs = o.hideFilteredMobs;
         hiddenMobs = o.hiddenMobs == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(o.hiddenMobs);

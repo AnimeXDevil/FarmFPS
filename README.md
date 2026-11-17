@@ -42,3 +42,9 @@ Every push to `main` builds a jar and adds it to the single rolling pre-release 
 
 ## Update 11 additions
 Settings page 4 has: Hide redstone blocks, Solid face fix (keeps full-size redstone blocks drawn so neighbouring faces have no holes; turn off for maximum speed), Hide all drops, Hide moving blocks, Mute all redstone sounds (levers excepted), Hide fish, and two search pickers (Hide items..., Hide mobs...). "Skip light" is now OFF by default: it can leave stale shadows. Commands: `/farmfps hide moving|sounds|fish`.
+
+## Update 14 additions
+- Animated textures are throttled everywhere now (`/farmfps anim` = near farms, "Anim (normal)" slider = everywhere else). Profiles showed texture uploads at 20-23% of the render thread.
+- "Freeze fast fluids": water/lava that changes constantly in a chunk stops re-meshing every change (redrawn every 2 s); still pools and oceans are unaffected.
+- "Hide moving blocks" now finishes piston moves on the first client tick, so pushed blocks go straight to their destination and are never drawn in between (pistons within 3 blocks of you are left alone).
+- Ambient block particles (torch smoke etc.) run every second tick.

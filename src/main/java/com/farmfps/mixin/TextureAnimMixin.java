@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Animated block textures (water, lava, fire, portals...) upload new frames to the GPU every tick;
  * that was the single largest cost in a farm profile. While a farm is active (or scope is
- * "Everywhere") only one tick in (skip + 1) advances them, so they animate more slowly.
+ * "Everywhere") only one tick in (skip + 1) advances them (a gentler setting applies outside farms), so they animate more slowly.
  */
 @Mixin(SpriteAtlasTexture.class)
 public abstract class TextureAnimMixin {
@@ -21,13 +21,15 @@ public abstract class TextureAnimMixin {
     @Inject(method = "tick()V", at = @At("HEAD"), cancellable = true, require = 0)
     private void farmfps$throttle(CallbackInfo ci) {
         FarmConfig c = FarmConfig.INSTANCE;
-        if (!c.enabled || c.textureAnimSkip <= 0) {
+        if (!c.enabled) {
             return;
         }
-        if (c.redstoneScope != 1 && FarmDetector.activeCount() <= 0) {
+        boolean farm = c.redstoneScope == 1 || FarmDetector.activeCount() > 0;
+        int skip = farm ? c.textureAnimSkip : c.textureAnimSkipNormal;
+        if (skip <= 0) {
             return;
         }
-        if (++farmfps$counter > c.textureAnimSkip) {
+        if (++farmfps$counter > skip) {
             farmfps$counter = 0;
             return;
         }

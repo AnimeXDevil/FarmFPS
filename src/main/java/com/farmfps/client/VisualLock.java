@@ -2,6 +2,7 @@ package com.farmfps.client;
 
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
+import com.farmfps.core.FluidChurn;
 import com.farmfps.core.Stats;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -79,6 +80,16 @@ public final class VisualLock {
             && HideManager.isBlockHidden(newBlock) && HideManager.isBlockHidden(oldBlock)) {
             Stats.redstoneHeld++;
             return c.skipLightUpdates ? (WANT_NO_REDRAW | WANT_NO_LIGHT) : WANT_NO_REDRAW;
+        }
+        // Fast-flowing water / lava: skip the redraw while the chunk keeps churning; the section is
+        // redrawn every couple of seconds (see ClientTicker) so it never stays stale for long.
+        if (c.freezeFluids && old != state && !old.getFluidState().isEmpty() && !state.getFluidState().isEmpty()) {
+            int churn = FluidChurn.record(cx, cz);
+            if (churn >= c.fluidChurnThreshold && (flags & NO_REDRAW) == 0) {
+                markDirty(pos);
+                Stats.fluidFrozen++;
+                return c.skipLightUpdates ? (WANT_NO_REDRAW | WANT_NO_LIGHT) : WANT_NO_REDRAW;
+            }
         }
         if (!FarmDetector.shouldAffect(cx, cz)) {
             return 0;
