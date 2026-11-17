@@ -48,3 +48,10 @@ Settings page 4 has: Hide redstone blocks, Solid face fix (keeps full-size redst
 - "Freeze fast fluids": water/lava that changes constantly in a chunk stops re-meshing every change (redrawn every 2 s); still pools and oceans are unaffected.
 - "Hide moving blocks" now finishes piston moves on the first client tick, so pushed blocks go straight to their destination and are never drawn in between (pistons within 3 blocks of you are left alone).
 - Ambient block particles (torch smoke etc.) run every second tick.
+
+## Update 15 additions
+- Invisible blocks no longer darken their neighbours (ambient-occlusion shading reports full brightness for them).
+- "Hide storage...": pick chests, trapped chests, ender chests, shulker boxes, barrels, hoppers, dispensers/droppers, furnaces, brewing stands, decorated pots, chiseled bookshelves and crafters to stop drawing. "Storage hidden" switches the list on and off.
+
+## Update 16
+Invisible blocks now also report an empty side culling face, so neighbouring blocks draw their own face next to them (like they do next to redstone dust) instead of leaving see-through holes. With this, "Solid face fix" can usually be turned off for more speed.

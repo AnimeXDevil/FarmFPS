@@ -1,5 +1,6 @@
 package com.farmfps.mixin;
 
+import com.farmfps.client.HideManager;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
 import com.farmfps.core.Stats;
@@ -28,6 +29,12 @@ public interface BlockEntityCullMixin {
     )
     private static void farmfps$cull(BlockEntity blockEntity, Vec3d cameraPos, CallbackInfoReturnable<Boolean> cir) {
         FarmConfig c = FarmConfig.INSTANCE;
+        if (c.enabled && HideManager.containersActive
+            && HideManager.isContainerHidden(blockEntity.getCachedState().getBlock())) {
+            Stats.blockEntitiesCulled++;
+            cir.setReturnValue(Boolean.FALSE);
+            return;
+        }
         if (c.enabled && c.hideRedstoneBlocks && blockEntity instanceof PistonBlockEntity) {
             Stats.blockEntitiesCulled++;
             cir.setReturnValue(Boolean.FALSE);

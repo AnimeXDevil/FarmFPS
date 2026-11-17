@@ -3,6 +3,9 @@
   "package": "com.farmfps.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "AmbientOcclusionMixin",
+    "CullFaceMixin",
+    "CullFaceWorldMixin",
     "BlockEntityCullMixin",
     "ChunkLightMixin",
     "PistonPushMixin",

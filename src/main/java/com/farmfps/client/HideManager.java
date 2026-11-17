@@ -49,6 +49,9 @@ public final class HideManager {
     private static volatile Set<Block> redBlocks = Collections.emptySet();
     private static volatile Set<Block> filterBlocks = Collections.emptySet();
     private static volatile Set<EntityType<?>> mobs = Collections.emptySet();
+    private static volatile Set<Block> containers = Collections.emptySet();
+    /** Fast pre-check for the block-entity hook. */
+    public static volatile boolean containersActive;
     /** Fast pre-check for the mob render hook. */
     public static volatile boolean mobsActive;
     private static volatile Set<Item> items = Collections.emptySet();
@@ -84,6 +87,19 @@ public final class HideManager {
         return filterBlocks.contains(b);
     }
 
+    public static boolean isContainerHidden(Block b) {
+        return containers.contains(b);
+    }
+
+    /** True if this exact state is currently drawn as invisible (render-type and ambient-occlusion hooks). */
+    public static boolean isInvisible(net.minecraft.block.BlockState state) {
+        Block block = state.getBlock();
+        if (filterBlocks.contains(block)) {
+            return true;
+        }
+        return redBlocks.contains(block) && !(FarmConfig.INSTANCE.solidFaceFix && state.isOpaque());
+    }
+
     public static boolean isMobHidden(EntityType<?> t) {
         return mobs.contains(t);
     }
@@ -100,6 +116,7 @@ public final class HideManager {
         HashSet<Block> fil = new HashSet<>();
         HashSet<Item> it = new HashSet<>();
         HashSet<EntityType<?>> mb = new HashSet<>();
+        HashSet<Block> cont = new HashSet<>();
         if (c.enabled && c.hideRedstoneBlocks) {
             for (Block blk : Registries.BLOCK) {
                 if (isRedstoneRelated(blk)) {
@@ -138,6 +155,17 @@ public final class HideManager {
                 }
             }
         }
+        if (c.enabled && c.hideContainers && c.hiddenContainers != null && !c.hiddenContainers.isEmpty()) {
+            for (Block blk : Registries.BLOCK) {
+                if (c.hiddenContainers.contains(Registries.BLOCK.getId(blk).toString())) {
+                    cont.add(blk);
+                    b.add(blk);
+                    fil.add(blk);
+                }
+            }
+        }
+        containers = Collections.unmodifiableSet(cont);
+        containersActive = !cont.isEmpty();
         redBlocks = Collections.unmodifiableSet(red);
         filterBlocks = Collections.unmodifiableSet(fil);
         mobs = Collections.unmodifiableSet(mb);

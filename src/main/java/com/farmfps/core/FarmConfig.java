@@ -50,6 +50,8 @@ public final class FarmConfig {
     public int fluidChurnThreshold = 24;       // fluid changes (decaying) in a chunk before it counts as churning
     public int textureAnimSkipNormal = 1;      // animated textures: 1 tick in (n+1) when no farm is active; 0 = off
     public boolean skipDisplayTicks = true;    // ambient block particles every second tick
+    public boolean hideContainers = true;      // storage blocks listed in hiddenContainers are not drawn
+    public java.util.List<String> hiddenContainers = new java.util.ArrayList<>();
     public boolean hideFish = false;           // cod, salmon, pufferfish, tropical fish are not drawn
     public boolean hideFilteredMobs = true;    // entity types in hiddenMobs are not drawn
     public java.util.List<String> hiddenMobs = new java.util.ArrayList<>();
@@ -145,6 +147,8 @@ public final class FarmConfig {
         muteAllRedstoneSounds = o.muteAllRedstoneSounds;
         solidFaceFix = o.solidFaceFix;
         hideFish = o.hideFish;
+        hideContainers = o.hideContainers;
+        hiddenContainers = o.hiddenContainers == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(o.hiddenContainers);
         freezeFluids = o.freezeFluids;
         fluidChurnThreshold = o.fluidChurnThreshold;
         textureAnimSkipNormal = o.textureAnimSkipNormal;

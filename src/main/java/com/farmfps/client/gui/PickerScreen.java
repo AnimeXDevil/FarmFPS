@@ -20,7 +20,7 @@ import java.util.Locale;
  * mouse wheel. Names starting with the typed text come first.
  */
 public class PickerScreen extends Screen {
-    public enum Kind { ITEMS, MOBS }
+    public enum Kind { ITEMS, MOBS, STORAGE }
 
     private static List<String> itemIds;
     private static List<String> mobIds;
@@ -36,7 +36,7 @@ public class PickerScreen extends Screen {
     private String query = "";
 
     public PickerScreen(Screen parent, Kind kind) {
-        super(Text.literal(kind == Kind.ITEMS ? "Hide items / blocks" : "Hide mobs"));
+        super(Text.literal(kind == Kind.ITEMS ? "Hide items / blocks" : (kind == Kind.MOBS ? "Hide mobs" : "Hide storage blocks")));
         this.parent = parent;
         this.kind = kind;
     }
@@ -49,10 +49,44 @@ public class PickerScreen extends Screen {
             }
             return c.hiddenItems;
         }
+        if (this.kind == Kind.STORAGE) {
+            if (c.hiddenContainers == null) {
+                c.hiddenContainers = new ArrayList<>();
+            }
+            return c.hiddenContainers;
+        }
         if (c.hiddenMobs == null) {
             c.hiddenMobs = new ArrayList<>();
         }
         return c.hiddenMobs;
+    }
+
+    private static List<String> storageIds;
+
+    /** Blocks that hold items: chests, barrels, shulker boxes, furnaces, hoppers and similar. */
+    private static List<String> storageList() {
+        if (storageIds != null) {
+            return storageIds;
+        }
+        List<String> out = new ArrayList<>();
+        for (net.minecraft.block.Block b : Registries.BLOCK) {
+            if (b instanceof net.minecraft.block.ChestBlock
+                || b instanceof net.minecraft.block.EnderChestBlock
+                || b instanceof net.minecraft.block.ShulkerBoxBlock
+                || b instanceof net.minecraft.block.BarrelBlock
+                || b instanceof net.minecraft.block.HopperBlock
+                || b instanceof net.minecraft.block.DispenserBlock
+                || b instanceof net.minecraft.block.AbstractFurnaceBlock
+                || b instanceof net.minecraft.block.BrewingStandBlock
+                || b instanceof net.minecraft.block.DecoratedPotBlock
+                || b instanceof net.minecraft.block.ChiseledBookshelfBlock
+                || b instanceof net.minecraft.block.CrafterBlock) {
+                out.add(Registries.BLOCK.getId(b).toString());
+            }
+        }
+        out.sort(String::compareTo);
+        storageIds = out;
+        return out;
     }
 
     private static List<String> idList(boolean items) {
@@ -87,7 +121,7 @@ public class PickerScreen extends Screen {
     @Override
     protected void init() {
         this.all.clear();
-        this.all.addAll(idList(this.kind == Kind.ITEMS));
+        this.all.addAll(this.kind == Kind.STORAGE ? storageList() : idList(this.kind == Kind.ITEMS));
 
         int top = 56;
         int bottom = this.height - 30;
@@ -209,7 +243,7 @@ public class PickerScreen extends Screen {
     @Override
     public void removed() {
         FarmFPS.saveConfig();
-        if (this.kind == Kind.ITEMS) {
+        if (this.kind == Kind.ITEMS || this.kind == Kind.STORAGE) {
             HideManager.reload();
         } else {
             HideManager.rebuild();
