@@ -22,7 +22,7 @@ public abstract class CullFaceMixin {
 
     @Inject(method = "getCullingFace(Lnet/minecraft/util/math/Direction;)Lnet/minecraft/util/shape/VoxelShape;", at = @At("HEAD"), cancellable = true, require = 0)
     private void farmfps$emptyCullingFace(Direction direction, CallbackInfoReturnable<VoxelShape> cir) {
-        if (!HideManager.blocksActive) {
+        if (!HideManager.blocksActive || !com.farmfps.core.FarmConfig.INSTANCE.neighborFaceFix) {
             return;
         }
         Object self = this;

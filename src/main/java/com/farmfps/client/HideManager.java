@@ -206,6 +206,45 @@ public final class HideManager {
         return null;
     }
 
+    /** Full id of a valid entity type, or null. */
+    public static String resolveMob(String text) {
+        String s = normalize(text);
+        if (s == null) {
+            return null;
+        }
+        for (EntityType<?> t : Registries.ENTITY_TYPE) {
+            if (Registries.ENTITY_TYPE.getId(t).toString().equals(s)) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /** Full id of a valid block, or null. */
+    public static String resolveBlock(String text) {
+        String s = normalize(text);
+        if (s == null) {
+            return null;
+        }
+        for (Block b : Registries.BLOCK) {
+            if (Registries.BLOCK.getId(b).toString().equals(s)) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    private static String normalize(String text) {
+        if (text == null) {
+            return null;
+        }
+        String s = text.trim().toLowerCase(java.util.Locale.ROOT);
+        if (s.isEmpty()) {
+            return null;
+        }
+        return s.indexOf(':') < 0 ? "minecraft:" + s : s;
+    }
+
     public static String idOf(Item item) {
         return Registries.ITEM.getId(item).toString();
     }

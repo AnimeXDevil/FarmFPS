@@ -104,7 +104,8 @@ public class ConfigScreen extends Screen {
             }).dimensions(right, y, colW, rowH).build());
             y += step;
             toggle(left, y, colW, rowH, "Flat light farms", () -> c.flatLightNearFarms, v -> c.flatLightNearFarms = v);
-            toggle(right, y, colW, rowH, "Action bar", () -> c.actionBar, v -> c.actionBar = v);
+            toggleThen(right, y, colW, rowH, "Neighbour faces", () -> c.neighborFaceFix,
+                v -> c.neighborFaceFix = v, HideManager::reload);
             y += step;
             toggle(left, y, colW, rowH, "Freeze fast fluids", () -> c.freezeFluids, v -> c.freezeFluids = v);
             slider(right, y, colW, rowH, "Anim (normal)", 0, 8, c.textureAnimSkipNormal, v -> c.textureAnimSkipNormal = v);

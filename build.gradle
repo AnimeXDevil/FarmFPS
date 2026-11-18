@@ -6,11 +6,17 @@ plugins {
 // Optional Mod Menu integration. Set modmenu_version in gradle.properties to enable it.
 def modmenuVersion = project.findProperty('modmenu_version')
 def modmenuOn = modmenuVersion != null
+// Optional Cloth Config screen. Set cloth_version in gradle.properties to enable it.
+def clothVersion = project.findProperty('cloth_version')
 
 repositories {
 	maven {
 		name = 'TerraformersMC'
 		url = 'https://maven.terraformersmc.com/'
+	}
+	maven {
+		name = 'Shedaniel'
+		url = 'https://maven.shedaniel.me/'
 	}
 }
 
@@ -18,7 +24,10 @@ sourceSets {
 	main {
 		java {
 			if (!modmenuVersion) {
-				exclude 'com/farmfps/compat/**'
+				exclude 'com/farmfps/compat/ModMenuIntegration.java'
+			}
+			if (!clothVersion) {
+				exclude 'com/farmfps/compat/ClothScreen.java'
 			}
 		}
 	}
@@ -35,6 +44,11 @@ dependencies {
 
 	if (modmenuVersion) {
 		modCompileOnly "com.terraformersmc:modmenu:${modmenuVersion}"
+	}
+	if (clothVersion) {
+		modCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${clothVersion}") {
+			exclude group: 'net.fabricmc.fabric-api'
+		}
 	}
 }
 

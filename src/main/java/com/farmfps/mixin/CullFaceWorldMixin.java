@@ -24,7 +24,7 @@ public abstract class CullFaceWorldMixin {
 
     @Inject(method = "getCullingFace(Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;)Lnet/minecraft/util/shape/VoxelShape;", at = @At("HEAD"), cancellable = true, require = 0)
     private void farmfps$emptyCullingFace(BlockView world, BlockPos pos, Direction direction, CallbackInfoReturnable<VoxelShape> cir) {
-        if (!HideManager.blocksActive) {
+        if (!HideManager.blocksActive || !com.farmfps.core.FarmConfig.INSTANCE.neighborFaceFix) {
             return;
         }
         Object self = this;

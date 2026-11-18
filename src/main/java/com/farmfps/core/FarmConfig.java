@@ -44,6 +44,7 @@ public final class FarmConfig {
     public java.util.List<String> hiddenItems = new java.util.ArrayList<>();
     public boolean hideMovingBlocks = false;   // blocks being pushed by pistons are not drawn while they move
     public boolean muteAllRedstoneSounds = false; // every redstone-block sound except levers, everywhere
+    public boolean neighborFaceFix = true;     // invisible blocks do not hide the faces of their neighbours
     public boolean solidFaceFix = true;        // keep full-size redstone blocks drawn so neighbour faces have no holes
     public boolean flatLightNearFarms = true;  // smooth lighting off while a farm is active
     public boolean freezeFluids = true;        // fast-changing water/lava stops re-meshing (still pools stay normal)
@@ -146,6 +147,7 @@ public final class FarmConfig {
         hideMovingBlocks = o.hideMovingBlocks;
         muteAllRedstoneSounds = o.muteAllRedstoneSounds;
         solidFaceFix = o.solidFaceFix;
+        neighborFaceFix = o.neighborFaceFix;
         hideFish = o.hideFish;
         hideContainers = o.hideContainers;
         hiddenContainers = o.hiddenContainers == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(o.hiddenContainers);

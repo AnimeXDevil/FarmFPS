@@ -55,3 +55,6 @@ Settings page 4 has: Hide redstone blocks, Solid face fix (keeps full-size redst
 
 ## Update 16
 Invisible blocks now also report an empty side culling face, so neighbouring blocks draw their own face next to them (like they do next to redstone dust) instead of leaving see-through holes. With this, "Solid face fix" can usually be turned off for more speed.
+
+## Update 17: Cloth Config screen
+With Cloth Config (and Mod Menu) installed, `/farmfps` and the Mod Menu config button open a categorised screen with a hover explanation for every option and editable lists for hidden items, mobs and storage blocks. Without Cloth Config the built-in screens are used. New toggle: "Neighbour face fix" (`/farmfps hide faces`). Build setup: `cloth_version` and `modmenu_version` in gradle.properties (delete a line to build without that integration).

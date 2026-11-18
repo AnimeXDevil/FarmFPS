@@ -3,7 +3,7 @@ package com.farmfps;
 import com.farmfps.client.ClientTicker;
 import com.farmfps.client.HideManager;
 import com.farmfps.client.VisualLock;
-import com.farmfps.client.gui.ConfigScreen;
+import com.farmfps.client.gui.ConfigOpener;
 import com.farmfps.core.EntityBudget;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
@@ -43,7 +43,7 @@ public class FarmFPS implements ClientModInitializer {
             dispatcher.register(ClientCommandManager.literal("farmfps")
                 .executes(ctx -> {
                     MinecraftClient mc = ctx.getSource().getClient();
-                    mc.execute(() -> mc.setScreen(new ConfigScreen(null)));
+                    mc.execute(() -> mc.setScreen(ConfigOpener.open(null)));
                     return 1;
                 })
                 .then(ClientCommandManager.literal("on").executes(ctx -> {
@@ -121,6 +121,13 @@ public class FarmFPS implements ClientModInitializer {
                         FarmConfig.INSTANCE.hideAllItems = !FarmConfig.INSTANCE.hideAllItems;
                         saveConfig();
                         say(ctx, "All dropped items hidden: " + (FarmConfig.INSTANCE.hideAllItems ? "ON" : "OFF"));
+                        return 1;
+                    }))
+                    .then(ClientCommandManager.literal("faces").executes(ctx -> {
+                        FarmConfig.INSTANCE.neighborFaceFix = !FarmConfig.INSTANCE.neighborFaceFix;
+                        saveConfig();
+                        HideManager.reload();
+                        say(ctx, "Neighbour face fix: " + (FarmConfig.INSTANCE.neighborFaceFix ? "ON" : "OFF"));
                         return 1;
                     }))
                     .then(ClientCommandManager.literal("moving").executes(ctx -> {
