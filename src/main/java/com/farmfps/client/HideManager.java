@@ -245,6 +245,62 @@ public final class HideManager {
         return s.indexOf(':') < 0 ? "minecraft:" + s : s;
     }
 
+    /** Item with this full id, or null. */
+    public static Item itemFor(String id) {
+        String s = normalize(id);
+        if (s == null) {
+            return null;
+        }
+        for (Item i : Registries.ITEM) {
+            if (Registries.ITEM.getId(i).toString().equals(s)) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    /** The item form of the block with this id, or null if it has none. */
+    public static Item itemForBlock(String blockId) {
+        String s = normalize(blockId);
+        if (s == null) {
+            return null;
+        }
+        for (Block b : Registries.BLOCK) {
+            if (Registries.BLOCK.getId(b).toString().equals(s)) {
+                Item i = b.asItem();
+                return i == net.minecraft.item.Items.AIR ? null : i;
+            }
+        }
+        return null;
+    }
+
+    /** Id of the block a block item places, or null for non-block items. */
+    public static String blockIdOfItem(Item item) {
+        if (item instanceof BlockItem bi) {
+            return Registries.BLOCK.getId(bi.getBlock()).toString();
+        }
+        return null;
+    }
+
+    private static volatile java.util.List<String> mobIds;
+
+    /** All entity type ids except the player, sorted; cached. */
+    public static java.util.List<String> allMobIds() {
+        java.util.List<String> out = mobIds;
+        if (out == null) {
+            out = new java.util.ArrayList<>();
+            for (EntityType<?> t : Registries.ENTITY_TYPE) {
+                String id = Registries.ENTITY_TYPE.getId(t).toString();
+                if (!id.equals("minecraft:player")) {
+                    out.add(id);
+                }
+            }
+            java.util.Collections.sort(out);
+            mobIds = out;
+        }
+        return out;
+    }
+
     public static String idOf(Item item) {
         return Registries.ITEM.getId(item).toString();
     }

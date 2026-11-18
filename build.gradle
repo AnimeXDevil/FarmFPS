@@ -6,8 +6,8 @@ plugins {
 // Optional Mod Menu integration. Set modmenu_version in gradle.properties to enable it.
 def modmenuVersion = project.findProperty('modmenu_version')
 def modmenuOn = modmenuVersion != null
-// Optional Cloth Config screen. Set cloth_version in gradle.properties to enable it.
-def clothVersion = project.findProperty('cloth_version')
+// Optional YetAnotherConfigLib screen. Set yacl_version in gradle.properties to enable it.
+def yaclVersion = project.findProperty('yacl_version')
 
 repositories {
 	maven {
@@ -15,8 +15,8 @@ repositories {
 		url = 'https://maven.terraformersmc.com/'
 	}
 	maven {
-		name = 'Shedaniel'
-		url = 'https://maven.shedaniel.me/'
+		name = 'Xander'
+		url = 'https://maven.isxander.dev/releases'
 	}
 }
 
@@ -26,8 +26,10 @@ sourceSets {
 			if (!modmenuVersion) {
 				exclude 'com/farmfps/compat/ModMenuIntegration.java'
 			}
-			if (!clothVersion) {
-				exclude 'com/farmfps/compat/ClothScreen.java'
+			// Leftover from an earlier update; no longer used.
+			exclude 'com/farmfps/compat/ClothScreen.java'
+			if (!yaclVersion) {
+				exclude 'com/farmfps/compat/YaclScreen.java'
 			}
 		}
 	}
@@ -45,9 +47,9 @@ dependencies {
 	if (modmenuVersion) {
 		modCompileOnly "com.terraformersmc:modmenu:${modmenuVersion}"
 	}
-	if (clothVersion) {
-		modCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${clothVersion}") {
-			exclude group: 'net.fabricmc.fabric-api'
+	if (yaclVersion) {
+		modCompileOnly("dev.isxander:yet-another-config-lib:${yaclVersion}") {
+			transitive = false
 		}
 	}
 }
