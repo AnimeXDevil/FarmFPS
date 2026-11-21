@@ -1,7 +1,7 @@
 # One workflow, all Minecraft versions.
 #  - builds FarmFPS once per Minecraft version (matrix), resolving Fabric Loader / Yarn / Fabric API /
 #    Mod Menu versions automatically for each one
-#  - consolidates failed build logs and GUI dump .txt files into ONE workflow artifact (build-logs-and-gui-dump)
+#  - consolidates all failed build logs into build-log.txt + gui-dump/ in ONE workflow artifact (build-logs-and-gui-dump)
 #  - publishes all jars that built successfully into ONE release (tag v<version>, marked Latest)
 # Run it from Actions > release-all > Run workflow. "versions" can be "all" or a comma list such as 26.3,1.21.11.
 name: release-all
@@ -128,7 +128,6 @@ jobs:
             tail -80 "out/gradle-$MC.txt" >> "$LOG"
             exit 1
           fi
-          rm -f "out/gradle-$MC.txt"
           JAR=$(ls "$DIR"/build/libs/*.jar | grep -v -- '-sources' | grep -v -- '-dev' | head -n 1)
           cp "$JAR" "out/farmfps-1.0.0-mc$MC.jar"
           echo "BUILD OK -> farmfps-1.0.0-mc$MC.jar" | tee -a "$LOG"
@@ -140,7 +139,6 @@ jobs:
           path: |
             out/*.jar
             out/log-*.txt
-            out/gradle-*.txt
           retention-days: 1
           if-no-files-found: warn
 
@@ -202,8 +200,9 @@ jobs:
           ls -la results || true
 
           rm -rf txt-bundle
-          mkdir -p txt-bundle/failed-builds txt-bundle/gui-dump
+          mkdir -p txt-bundle/gui-dump
 
+          # combine summary + failed build logs into one single build-log.txt
           {
             echo "FarmFPS build log - $(date -u +%Y-%m-%dT%H:%M:%SZ) - commit ${GITHUB_SHA::7}"
             echo
@@ -226,14 +225,7 @@ jobs:
           } > txt-bundle/build-log.txt
           head -n 60 txt-bundle/build-log.txt
 
-          # stage only failed build logs and GUI dump files into one folder for a single workflow artifact
-          for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r || true); do
-            if ! grep -q '^BUILD OK' "$f"; then
-              mc=$(basename "$f" .txt); mc=${mc#log-}
-              cp "$f" txt-bundle/failed-builds/
-              [ -f "results/gradle-$mc.txt" ] && cp "results/gradle-$mc.txt" txt-bundle/failed-builds/ || true
-            fi
-          done
+          # include only the 3 GUI dump files in gui-dump/
           find results -maxdepth 1 -type f \( -name 'gui-*.txt' -o -name 'all-classes-*.txt' \) -exec cp {} txt-bundle/gui-dump/ \;
 
           # remove all per-job intermediate artifacts so only one combined artifact appears on the run page
@@ -264,4 +256,3 @@ jobs:
           name: build-logs-and-gui-dump
           path: txt-bundle/
           if-no-files-found: warn
-          
