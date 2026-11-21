@@ -1,0 +1,232 @@
+# One workflow, all Minecraft versions.
+#  - builds FarmFPS once per Minecraft version (matrix), resolving Fabric Loader / Yarn / Fabric API /
+#    Mod Menu versions automatically for each one
+#  - collects every build's output into ONE text file, build-log.txt, attached to the "build-logs"
+#    pre-release (download it as plain text and send it over)
+#  - publishes all jars that built successfully into ONE release (tag v<version>, marked Latest)
+# Run it from Actions > release-all > Run workflow. "versions" can be "all" or a comma list such as 26.3,1.21.11.
+name: release-all
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: 'Minecraft versions to build: all, or a comma list (e.g. 26.3,26.2,1.21.11)'
+        default: 'all'
+      publish:
+        description: 'Publish the release and log'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        env:
+          V: ${{ inputs.versions }}
+        run: |
+          ALL='[
+            {"mc":"26.3","dir":"mc26","java":25,"family":"mojang"},
+            {"mc":"26.2","dir":"mc26","java":25,"family":"mojang"},
+            {"mc":"26.1.2","dir":"mc26","java":25,"family":"mojang"},
+            {"mc":"26.1.1","dir":"mc26","java":25,"family":"mojang"},
+            {"mc":"26.1","dir":"mc26","java":25,"family":"mojang"},
+            {"mc":"1.21.11","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.10","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.9","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.8","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.7","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.6","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.5","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.4","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.3","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.2","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21.1","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.21","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.20.6","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.20.5","dir":".","java":21,"family":"yarn"},
+            {"mc":"1.20.4","dir":".","java":17,"family":"yarn"},
+            {"mc":"1.20.3","dir":".","java":17,"family":"yarn"},
+            {"mc":"1.20.2","dir":".","java":17,"family":"yarn"},
+            {"mc":"1.20.1","dir":".","java":17,"family":"yarn"},
+            {"mc":"1.20","dir":".","java":17,"family":"yarn"}
+          ]'
+          if [ -z "$V" ] || [ "$V" = "all" ]; then
+            SEL=$(echo "$ALL" | jq -c '.')
+          else
+            SEL=$(echo "$ALL" | jq -c --arg v "$V" '[.[] | select(.mc as $m | ($v | split(",") | map(gsub(" ";"")) | index($m)) != null)]')
+          fi
+          echo "matrix={\"include\":$SEL}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.8.2'
+      - name: build this Minecraft version
+        continue-on-error: true
+        env:
+          MC: ${{ matrix.mc }}
+          DIR: ${{ matrix.dir }}
+          JAVA: ${{ matrix.java }}
+          FAMILY: ${{ matrix.family }}
+        run: |
+          mkdir -p out
+          LOG="out/log-$MC.txt"
+          UA='FarmFPS-CI'
+          {
+            echo "================================================================"
+            echo "MINECRAFT $MC   (family: $FAMILY, java release: $JAVA)"
+            echo "================================================================"
+          } > "$LOG"
+
+          LOADER=$(curl -fsS https://meta.fabricmc.net/v2/versions/loader | jq -r '[.[]|select(.stable)][0].version' || true)
+          YARN=""
+          if [ "$FAMILY" = "yarn" ]; then
+            YARN=$(curl -fsS "https://meta.fabricmc.net/v2/versions/yarn/$MC" | jq -r '.[0].version // empty' || true)
+          fi
+          FAPI=$(curl -fsS -G -H "User-Agent: $UA" "https://api.modrinth.com/v2/project/fabric-api/version" \
+            --data-urlencode "game_versions=[\"$MC\"]" --data-urlencode 'loaders=["fabric"]' \
+            | jq -r '[.[]|select(.version_type=="release")][0].version_number // empty' || true)
+          MODMENU=$(curl -fsS -G -H "User-Agent: $UA" "https://api.modrinth.com/v2/project/modmenu/version" \
+            --data-urlencode "game_versions=[\"$MC\"]" --data-urlencode 'loaders=["fabric"]' \
+            | jq -r '[.[]|select(.version_type=="release")][0].version_number // empty' || true)
+          echo "resolved: loader=$LOADER yarn=$YARN fabric-api=$FAPI modmenu=$MODMENU" | tee -a "$LOG"
+
+          if [ -z "$FAPI" ]; then echo "ERROR: no Fabric API release found for $MC" | tee -a "$LOG"; exit 1; fi
+          if [ "$FAMILY" = "yarn" ] && [ -z "$YARN" ]; then echo "ERROR: no Yarn mappings found for $MC" | tee -a "$LOG"; exit 1; fi
+
+          ARGS=(-Pminecraft_version="$MC" -Pfabric_api_version="$FAPI" -Ploader_version="$LOADER" -Pmodmenu_version="$MODMENU" -Pjava_release="$JAVA")
+          if [ "$FAMILY" = "yarn" ]; then ARGS+=(-Pyarn_mappings="$YARN"); fi
+
+          set +e
+          gradle -p "$DIR" clean build --no-daemon --console=plain --stacktrace "${ARGS[@]}" > "out/gradle-$MC.txt" 2>&1
+          STATUS=$?
+          set -e
+          echo "gradle exit status: $STATUS" | tee -a "$LOG"
+          if [ $STATUS -ne 0 ]; then
+            echo "---- errors and failure summary ----" >> "$LOG"
+            grep -nE "error:|warning: \[|cannot find symbol|symbol:|location:|What went wrong|Execution failed|Could not|FAILED|Mixin|Exception" "out/gradle-$MC.txt" | head -400 >> "$LOG" || true
+            echo "---- last 80 lines of the gradle output ----" >> "$LOG"
+            tail -80 "out/gradle-$MC.txt" >> "$LOG"
+            exit 1
+          fi
+          JAR=$(ls "$DIR"/build/libs/*.jar | grep -v -- '-sources' | grep -v -- '-dev' | head -n 1)
+          cp "$JAR" "out/farmfps-1.0.0-mc$MC.jar"
+          echo "BUILD OK -> farmfps-1.0.0-mc$MC.jar" | tee -a "$LOG"
+      - name: upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-${{ matrix.mc }}
+          path: |
+            out/*.jar
+            out/log-*.txt
+            out/gradle-*.txt
+          if-no-files-found: warn
+
+  gui-dump:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.8.2'
+      - name: dump GUI class signatures (26.3)
+        continue-on-error: true
+        run: |
+          FAPI=$(curl -fsS -G -H "User-Agent: FarmFPS-CI" "https://api.modrinth.com/v2/project/fabric-api/version" \
+            --data-urlencode 'game_versions=["26.3"]' --data-urlencode 'loaders=["fabric"]' \
+            | jq -r '[.[]|select(.version_type=="release")][0].version_number // empty')
+          gradle -p mc26 build --no-daemon --console=plain -Pminecraft_version=26.3 -Pfabric_api_version="$FAPI" -Pmodmenu_version= > gui-gradle.txt 2>&1 || true
+          mkdir -p out
+          JAR=""
+          for j in $(find ~/.gradle /home/runner -name '*.jar' -size +10M 2>/dev/null); do
+            if unzip -l "$j" 2>/dev/null | grep -q 'net/minecraft/client/Minecraft.class'; then JAR="$j"; break; fi
+          done
+          echo "game jar: $JAR" > out/gui-signatures.txt
+          unzip -Z1 "$JAR" | grep '\.class$' | sed 's/\.class$//' > out/all-classes-26.3.txt
+          grep -E '^net/minecraft/client/gui/(screens/Screen|components/(Button|AbstractButton|AbstractWidget|EditBox|AbstractSliderButton|CycleButton|StringWidget|Checkbox|AbstractSelectionList|ObjectSelectionList|ContainerObjectSelectionList|Tooltip|Renderable|EditBox)|GuiGraphicsExtractor|Font|narration/NarrationElementOutput)$|^net/minecraft/network/chat/(Component|Style|MutableComponent)$|^net/minecraft/client/gui/components/events/GuiEventListener$|^net/minecraft/client/input/' out/all-classes-26.3.txt > out/gui-selected.txt || true
+          while read c; do javap -p -cp "$JAR" "$(echo $c | tr / .)" >> out/gui-signatures.txt 2>&1 || true; done < out/gui-selected.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gui-dump
+          path: out/
+          if-no-files-found: warn
+
+  publish:
+    needs: [build, gui-dump]
+    if: always() && inputs.publish
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v7
+        with:
+          path: results
+          merge-multiple: true
+      - name: assemble the log and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
+          ls -la results || true
+          {
+            echo "FarmFPS build log - $(date -u +%Y-%m-%dT%H:%M:%SZ) - commit ${GITHUB_SHA::7}"
+            echo
+            echo "SUMMARY"
+            for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r); do
+              mc=$(basename "$f" .txt); mc=${mc#log-}
+              if grep -q '^BUILD OK' "$f"; then echo "  OK      $mc"; else echo "  FAILED  $mc"; fi
+            done
+            echo
+            for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r); do cat "$f"; echo; done
+          } > build-log.txt
+          cat build-log.txt | head -60
+
+          # the plain-text log: one pre-release called build-logs, file replaced on every run
+          if ! gh release view build-logs >/dev/null 2>&1; then
+            gh release create build-logs --prerelease --latest=false --target "$GITHUB_SHA" \
+              --title "FarmFPS build logs" --notes "build-log.txt = the latest build output for every Minecraft version."
+          fi
+          gh release upload build-logs build-log.txt --clobber
+          [ -f results/gui-signatures.txt ] && gh release upload build-logs results/gui-signatures.txt --clobber || true
+          [ -f results/gui-selected.txt ] && gh release upload build-logs results/gui-selected.txt --clobber || true
+
+          # the real release: one tab, every jar that built
+          JARS=$(ls results/farmfps-*.jar 2>/dev/null | sort -V -r || true)
+          if [ -n "$JARS" ]; then
+            TAG="v${VERSION}"
+            if ! gh release view "$TAG" >/dev/null 2>&1; then
+              gh release create "$TAG" --target "$GITHUB_SHA" --latest \
+                --title "FarmFPS ${VERSION}" \
+                --notes "Client-side Fabric mod that fixes lag near redstone farms and mob grinders. Pick the jar for your Minecraft version (farmfps-${VERSION}-mc<version>.jar). Needs Fabric Loader and Fabric API. Mod Menu is optional: the settings button there opens the same screen as /farmfps."
+            fi
+            for j in $JARS; do gh release upload "$TAG" "$j" --clobber; done
+            gh release edit "$TAG" --latest
+          else
+            echo "No jar was built, nothing to release."
+          fi
