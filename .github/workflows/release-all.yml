@@ -1,8 +1,8 @@
 # One workflow, all Minecraft versions.
 #  - builds FarmFPS once per Minecraft version (matrix), resolving Fabric Loader / Yarn / Fabric API /
 #    Mod Menu versions automatically for each one
-#  - collects every build's output into ONE text file, build-log.txt, attached to the "build-logs"
-#    pre-release (download it as plain text and send it over)
+#  - collects every build's output and GUI dump .txt files into ONE zip archive,
+#    build-logs-and-gui-dump.zip, attached to the "build-logs" pre-release
 #  - publishes all jars that built successfully into ONE release (tag v<version>, marked Latest)
 # Run it from Actions > release-all > Run workflow. "versions" can be "all" or a comma list such as 26.3,1.21.11.
 name: release-all
@@ -207,16 +207,25 @@ jobs:
           } > build-log.txt
           cat build-log.txt | head -60
 
-          # the plain-text log: one pre-release called build-logs, file replaced on every run
+          # bundle all .txt build logs and GUI dump files into one zip for one-click download
+          rm -rf txt-bundle build-logs-and-gui-dump.zip
+          mkdir -p txt-bundle/build-logs txt-bundle/gui-dump
+          cp build-log.txt txt-bundle/
+          find results -maxdepth 1 -type f \( -name 'log-*.txt' -o -name 'gradle-*.txt' \) -exec cp {} txt-bundle/build-logs/ \;
+          find results -maxdepth 1 -type f \( -name 'gui-*.txt' -o -name 'all-classes-*.txt' \) -exec cp {} txt-bundle/gui-dump/ \;
+          (cd txt-bundle && zip -r ../build-logs-and-gui-dump.zip .)
+
+          # the zipped logs and GUI dump: one pre-release called build-logs, file replaced on every run
           if ! gh release view build-logs >/dev/null 2>&1; then
             gh release create build-logs --prerelease --latest=false --target "$GITHUB_SHA" \
-              --title "FarmFPS build logs" --notes "build-log.txt = the latest build output for every Minecraft version."
+              --title "FarmFPS build logs" --notes "build-logs-and-gui-dump.zip = the latest build logs and GUI dump .txt files for every Minecraft version."
           fi
-          gh release upload build-logs build-log.txt --clobber
-          [ -f results/gui-signatures.txt ] && gh release upload build-logs results/gui-signatures.txt --clobber || true
-          [ -f results/gui-selected.txt ] && gh release upload build-logs results/gui-selected.txt --clobber || true
+          for old in $(gh release view build-logs --json assets -q '.assets[].name' 2>/dev/null | grep '\.txt$' || true); do
+            gh release delete-asset build-logs "$old" -y || true
+          done
+          gh release upload build-logs build-logs-and-gui-dump.zip --clobber
 
-          # the real release: one tab, every jar that built
+          # the real release: one tab, every jar that built (unzipped)
           JARS=$(ls results/farmfps-*.jar 2>/dev/null | sort -V -r || true)
           if [ -n "$JARS" ]; then
             TAG="v${VERSION}"
