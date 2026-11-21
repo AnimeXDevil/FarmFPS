@@ -12,7 +12,9 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.arguments.ArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -40,7 +42,7 @@ public class FarmFPS implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(ClientTicker::onEndTick);
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-            dispatcher.register(ClientCommandManager.literal("farmfps")
+            dispatcher.register(literal("farmfps")
                 .executes(ctx -> {
                     Minecraft mc = ctx.getSource().getClient();
                     mc.execute(() -> {
@@ -53,58 +55,58 @@ public class FarmFPS implements ClientModInitializer {
                     });
                     return 1;
                 })
-                .then(ClientCommandManager.literal("on").executes(ctx -> {
+                .then(literal("on").executes(ctx -> {
                     FarmConfig.INSTANCE.enabled = true;
                     saveConfig();
                     say(ctx, "FarmFPS enabled");
                     return 1;
                 }))
-                .then(ClientCommandManager.literal("off").executes(ctx -> {
+                .then(literal("off").executes(ctx -> {
                     FarmConfig.INSTANCE.enabled = false;
                     EntityBudget.reset();
                     saveConfig();
                     say(ctx, "FarmFPS disabled (full vanilla rendering)");
                     return 1;
                 }))
-                .then(ClientCommandManager.literal("particles")
+                .then(literal("particles")
                     .executes(ctx -> {
                         FarmConfig.INSTANCE.hideFarmEffects = !FarmConfig.INSTANCE.hideFarmEffects;
                         saveConfig();
                         say(ctx, "Farm particles and sounds: " + (FarmConfig.INSTANCE.hideFarmEffects ? "hidden" : "shown"));
                         return 1;
                     })
-                    .then(ClientCommandManager.literal("hide").executes(ctx -> {
+                    .then(literal("hide").executes(ctx -> {
                         FarmConfig.INSTANCE.hideFarmEffects = true;
                         saveConfig();
                         say(ctx, "Farm particles and sounds: hidden");
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("show").executes(ctx -> {
+                    .then(literal("show").executes(ctx -> {
                         FarmConfig.INSTANCE.hideFarmEffects = false;
                         saveConfig();
                         say(ctx, "Farm particles and sounds: shown");
                         return 1;
                     })))
-                .then(ClientCommandManager.literal("items")
-                    .then(ClientCommandManager.argument("count", IntegerArgumentType.integer(10, 2000))
+                .then(literal("items")
+                    .then(argument("count", IntegerArgumentType.integer(10, 2000))
                         .executes(ctx -> {
                             FarmConfig.INSTANCE.maxItems = IntegerArgumentType.getInteger(ctx, "count");
                             saveConfig();
                             say(ctx, "Rendering up to " + FarmConfig.INSTANCE.maxItems + " dropped items");
                             return 1;
                         })))
-                .then(ClientCommandManager.literal("redstone")
-                    .then(ClientCommandManager.literal("off").executes(ctx -> setRedstone(ctx, 0)))
-                    .then(ClientCommandManager.literal("refresh").executes(ctx -> setRedstone(ctx, 1)))
-                    .then(ClientCommandManager.literal("freeze").executes(ctx -> setRedstone(ctx, 2))))
-                .then(ClientCommandManager.literal("scope")
-                    .then(ClientCommandManager.literal("farms").executes(ctx -> setScope(ctx, 0)))
-                    .then(ClientCommandManager.literal("all").executes(ctx -> setScope(ctx, 1))))
-                .then(ClientCommandManager.literal("pistons")
-                    .then(ClientCommandManager.literal("vanilla").executes(ctx -> setPistons(ctx, 0)))
-                    .then(ClientCommandManager.literal("snap").executes(ctx -> setPistons(ctx, 1)))
-                    .then(ClientCommandManager.literal("ghost").executes(ctx -> setPistons(ctx, 2))))
-                .then(ClientCommandManager.literal("farmmode").executes(ctx -> {
+                .then(literal("redstone")
+                    .then(literal("off").executes(ctx -> setRedstone(ctx, 0)))
+                    .then(literal("refresh").executes(ctx -> setRedstone(ctx, 1)))
+                    .then(literal("freeze").executes(ctx -> setRedstone(ctx, 2))))
+                .then(literal("scope")
+                    .then(literal("farms").executes(ctx -> setScope(ctx, 0)))
+                    .then(literal("all").executes(ctx -> setScope(ctx, 1))))
+                .then(literal("pistons")
+                    .then(literal("vanilla").executes(ctx -> setPistons(ctx, 0)))
+                    .then(literal("snap").executes(ctx -> setPistons(ctx, 1)))
+                    .then(literal("ghost").executes(ctx -> setPistons(ctx, 2))))
+                .then(literal("farmmode").executes(ctx -> {
                     FarmConfig c = FarmConfig.INSTANCE;
                     boolean on = !(c.hideRedstoneBlocks && c.hideAllItems);
                     c.hideRedstoneBlocks = on;
@@ -116,57 +118,57 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "Farm mode " + (on ? "ON: redstone blocks invisible, drops hidden; levers stay visible; moving blocks and redstone sounds off too" : "OFF"));
                     return 1;
                 }))
-                .then(ClientCommandManager.literal("hide")
-                    .then(ClientCommandManager.literal("redstone").executes(ctx -> {
+                .then(literal("hide")
+                    .then(literal("redstone").executes(ctx -> {
                         FarmConfig.INSTANCE.hideRedstoneBlocks = !FarmConfig.INSTANCE.hideRedstoneBlocks;
                         saveConfig();
                         HideManager.reload();
                         say(ctx, "Redstone blocks invisible: " + (FarmConfig.INSTANCE.hideRedstoneBlocks ? "ON" : "OFF"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("drops").executes(ctx -> {
+                    .then(literal("drops").executes(ctx -> {
                         FarmConfig.INSTANCE.hideAllItems = !FarmConfig.INSTANCE.hideAllItems;
                         saveConfig();
                         say(ctx, "All dropped items hidden: " + (FarmConfig.INSTANCE.hideAllItems ? "ON" : "OFF"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("faces").executes(ctx -> {
+                    .then(literal("faces").executes(ctx -> {
                         FarmConfig.INSTANCE.neighborFaceFix = !FarmConfig.INSTANCE.neighborFaceFix;
                         saveConfig();
                         HideManager.reload();
                         say(ctx, "Neighbour face fix: " + (FarmConfig.INSTANCE.neighborFaceFix ? "ON" : "OFF"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("moving").executes(ctx -> {
+                    .then(literal("moving").executes(ctx -> {
                         FarmConfig.INSTANCE.hideMovingBlocks = !FarmConfig.INSTANCE.hideMovingBlocks;
                         saveConfig();
                         say(ctx, "Piston-moved blocks hidden while moving: " + (FarmConfig.INSTANCE.hideMovingBlocks ? "ON" : "OFF"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("sounds").executes(ctx -> {
+                    .then(literal("sounds").executes(ctx -> {
                         FarmConfig.INSTANCE.muteAllRedstoneSounds = !FarmConfig.INSTANCE.muteAllRedstoneSounds;
                         saveConfig();
                         say(ctx, "Redstone sounds muted (levers excepted): " + (FarmConfig.INSTANCE.muteAllRedstoneSounds ? "ON" : "OFF"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("fish").executes(ctx -> {
+                    .then(literal("fish").executes(ctx -> {
                         FarmConfig.INSTANCE.hideFish = !FarmConfig.INSTANCE.hideFish;
                         saveConfig();
                         HideManager.rebuild();
                         say(ctx, "Fish hidden: " + (FarmConfig.INSTANCE.hideFish ? "ON" : "OFF"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("filter").executes(ctx -> {
+                    .then(literal("filter").executes(ctx -> {
                         FarmConfig.INSTANCE.hideFilteredItems = !FarmConfig.INSTANCE.hideFilteredItems;
                         saveConfig();
                         HideManager.reload();
                         say(ctx, "Item filter: " + (FarmConfig.INSTANCE.hideFilteredItems ? "ON" : "OFF"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("add")
-                        .then(ClientCommandManager.argument("item", StringArgumentType.greedyString())
+                    .then(literal("add")
+                        .then(argument("item", StringArgumentType.greedyString())
                             .executes(ctx -> hideAdd(ctx, StringArgumentType.getString(ctx, "item")))))
-                    .then(ClientCommandManager.literal("hand").executes(ctx -> {
+                    .then(literal("hand").executes(ctx -> {
                         var player = ctx.getSource().getPlayer();
                         if (player == null || player.getMainHandItem().isEmpty()) {
                             say(ctx, "Hold the item you want to hide first");
@@ -174,8 +176,8 @@ public class FarmFPS implements ClientModInitializer {
                         }
                         return hideAdd(ctx, HideManager.idOf(player.getMainHandItem().getItem()));
                     }))
-                    .then(ClientCommandManager.literal("remove")
-                        .then(ClientCommandManager.argument("item", StringArgumentType.greedyString())
+                    .then(literal("remove")
+                        .then(argument("item", StringArgumentType.greedyString())
                             .executes(ctx -> {
                                 String id = HideManager.resolveItem(StringArgumentType.getString(ctx, "item"));
                                 if (id == null || !FarmConfig.INSTANCE.hiddenItems.remove(id)) {
@@ -187,21 +189,21 @@ public class FarmFPS implements ClientModInitializer {
                                 say(ctx, "Showing " + id + " again");
                                 return 1;
                             })))
-                    .then(ClientCommandManager.literal("list").executes(ctx -> {
+                    .then(literal("list").executes(ctx -> {
                         say(ctx, FarmConfig.INSTANCE.hiddenItems.isEmpty()
                             ? "Hidden items: none. Use /farmfps hide add <item> or /farmfps hide hand"
                             : "Hidden items: " + String.join(", ", FarmConfig.INSTANCE.hiddenItems));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("clear").executes(ctx -> {
+                    .then(literal("clear").executes(ctx -> {
                         FarmConfig.INSTANCE.hiddenItems.clear();
                         saveConfig();
                         HideManager.reload();
                         say(ctx, "Hidden item list cleared");
                         return 1;
                     })))
-                .then(ClientCommandManager.literal("anim")
-                    .then(ClientCommandManager.argument("skip", IntegerArgumentType.integer(0, 8))
+                .then(literal("anim")
+                    .then(argument("skip", IntegerArgumentType.integer(0, 8))
                         .executes(ctx -> {
                             FarmConfig.INSTANCE.textureAnimSkip = IntegerArgumentType.getInteger(ctx, "skip");
                             saveConfig();
@@ -209,18 +211,18 @@ public class FarmFPS implements ClientModInitializer {
                                 + (FarmConfig.INSTANCE.textureAnimSkip == 0 ? " (off)" : " while a farm is active"));
                             return 1;
                         })))
-                .then(ClientCommandManager.literal("light")
+                .then(literal("light")
                     .executes(ctx -> {
                         FarmConfig.INSTANCE.skipLightUpdates = !FarmConfig.INSTANCE.skipLightUpdates;
                         saveConfig();
                         say(ctx, "Skip redstone light updates: " + (FarmConfig.INSTANCE.skipLightUpdates ? "ON" : "OFF"));
                         return 1;
                     }))
-                .then(ClientCommandManager.literal("preset")
-                    .then(ClientCommandManager.literal("balanced").executes(ctx -> applyPreset(ctx, 0)))
-                    .then(ClientCommandManager.literal("megafarm").executes(ctx -> applyPreset(ctx, 1)))
-                    .then(ClientCommandManager.literal("potato").executes(ctx -> applyPreset(ctx, 2))))
-                .then(ClientCommandManager.literal("stats").executes(ctx -> {
+                .then(literal("preset")
+                    .then(literal("balanced").executes(ctx -> applyPreset(ctx, 0)))
+                    .then(literal("megafarm").executes(ctx -> applyPreset(ctx, 1)))
+                    .then(literal("potato").executes(ctx -> applyPreset(ctx, 2))))
+                .then(literal("stats").executes(ctx -> {
                     FarmConfig c = FarmConfig.INSTANCE;
                     say(ctx, "FarmFPS " + (c.enabled ? "ON" : "OFF") + " | active farm chunks: " + FarmDetector.activeCount());
                     say(ctx, "Items near: " + EntityBudget.itemsNear + "/" + c.maxItems
@@ -245,7 +247,7 @@ public class FarmFPS implements ClientModInitializer {
                     say(ctx, "A counter stuck at 0 during a farm means that hook did not apply on this version.");
                     return 1;
                 }))
-                .then(ClientCommandManager.literal("reload").executes(ctx -> {
+                .then(literal("reload").executes(ctx -> {
                     FarmConfig.load(configPath);
                     HideManager.reload();
                     say(ctx, "FarmFPS config reloaded");
@@ -255,6 +257,15 @@ public class FarmFPS implements ClientModInitializer {
         );
 
         LOGGER.info("FarmFPS initialized");
+    }
+
+    // Plain Brigadier builders typed to the client command source (the Fabric helper class was renamed in 26.x).
+    private static LiteralArgumentBuilder<FabricClientCommandSource> literal(String name) {
+        return LiteralArgumentBuilder.<FabricClientCommandSource>literal(name);
+    }
+
+    private static <T> RequiredArgumentBuilder<FabricClientCommandSource, T> argument(String name, ArgumentType<T> type) {
+        return RequiredArgumentBuilder.<FabricClientCommandSource, T>argument(name, type);
     }
 
     private static int hideAdd(CommandContext<FabricClientCommandSource> ctx, String text) {
