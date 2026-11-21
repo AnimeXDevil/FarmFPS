@@ -5,10 +5,17 @@
   "injectors": { "defaultRequire": 0 },
   "client": [
     "BlockEntityCullMixin",
+    "DisplayTickMixin",
     "EntityCullMixin",
     "ItemSpawnMixin",
     "ItemTickMixin",
     "ItemWorldMixin",
-    "ParticleThrottleMixin"
+    "ParticleThrottleMixin",
+    "PistonCullMixin",
+    "PistonFinishMixin",
+    "PistonPushMixin",
+    "SoundEventMixin",
+    "SoundThrottleMixin",
+    "TextureAnimMixin"
   ]
 }

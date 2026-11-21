@@ -5,6 +5,7 @@ import com.farmfps.core.EntityBudget;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
 import com.farmfps.core.Stats;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -23,6 +24,8 @@ public final class ClientTicker {
     private static final int SCAN_INTERVAL_TICKS = 10;     // 2 scans per second
     private static final int STATUS_INTERVAL_TICKS = 10;   // action bar refresh
     private static int scanTicks;
+    private static int statusTicks;
+    private static long lastStatsTotal;
     private static int flatHold;
     /** True while a farm is active (plus a 30 s hold so meshes are not built with mixed lighting). */
     public static boolean flatLight;
@@ -51,6 +54,7 @@ public final class ClientTicker {
             EntityBudget.reset();
             FarmDetector.clear();
             scanTicks = 0;
+            statusTicks = 0;
             return;
         }
 
@@ -65,6 +69,23 @@ public final class ClientTicker {
             scan(world, player, c);
         }
 
+        if (c.actionBar && ++statusTicks >= 10) {
+            statusTicks = 0;
+            showStatus(player, c);
+        }
+    }
+
+    private static void showStatus(LocalPlayer player, FarmConfig c) {
+        long total = Stats.total();
+        boolean busy = total != lastStatsTotal
+            || EntityBudget.itemsNear >= c.maxItems
+            || FarmDetector.activeCount() > 0;
+        lastStatsTotal = total;
+        if (busy) {
+            player.sendOverlayMessage(Component.literal("FarmFPS | items " + EntityBudget.itemsNear + "/" + c.maxItems
+                + " | blocked: " + Stats.spawnsDropped + " items, "
+                + Stats.particlesHidden + " particles, " + Stats.soundsMuted + " sounds"));
+        }
     }
 
     private static void scan(ClientLevel world, LocalPlayer player, FarmConfig c) {
