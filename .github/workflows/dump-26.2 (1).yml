@@ -1,0 +1,44 @@
+# Run manually (Actions > dump-26.2 > Run workflow). Produces an artifact "mc-dump" with the
+# real Minecraft 26.2 class/method signatures so the port uses verified names.
+name: dump-26.2
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.8.2'
+      - name: build (downloads and caches the game jar)
+        working-directory: mc26
+        run: gradle build --no-daemon
+      - name: dump signatures
+        run: |
+          mkdir -p dump
+          JAR=""
+          for j in $(find ~/.gradle /home/runner -name '*.jar' -size +10M 2>/dev/null); do
+            if unzip -l "$j" 2>/dev/null | grep -q 'net/minecraft/client/Minecraft.class'; then JAR="$j"; break; fi
+          done
+          echo "game jar: $JAR"
+          unzip -Z1 "$JAR" | grep '\.class$' | sed 's/\.class$//' > dump/all-classes.txt
+          wc -l dump/all-classes.txt
+          PAT='/(Hud|LocalPlayer|Player|BlockEntity|DustParticleOptions|BlockState|BuiltInRegistries|EntityType|Blocks|ClientLevel|ClientPacketListener|ItemEntity|ExperienceOrb|EntityRenderer|EntityRenderDispatcher|ParticleEngine|SoundManager|SoundEngine|PistonMovingBlockEntity|BlockEntityRenderer|BlockEntityRenderDispatcher|ThreadedLevelLightEngine|LevelLightEngine|LightEngine|LevelChunk|BlockBehaviour(\$BlockStateBase)?|Minecraft|TextureAtlas|TextureAtlasSprite|SpriteContents|Level|LevelRenderer|ClientboundAddEntityPacket|DebugRenderer|EntityHitboxDebugRenderer|Screen|GuiGraphics|Gui|Options|SoundInstance|Component|Entity|BlockStateBase|ItemBlockRenderTypes|ModelBlockRenderer|BlockRenderDispatcher|AmbientOcclusionRenderStorage|BlockStateModel)$'
+          grep -E "$PAT" dump/all-classes.txt > dump/selected.txt || true
+          while read c; do
+            javap -p -cp "$JAR" "$(echo $c | tr / .)" >> dump/signatures.txt 2>&1 || true
+          done < <(grep -E '^net/minecraft/(client|world|network)' dump/selected.txt)
+          grep -E 'Piston|Light|Particle|Sound|Hitbox|Cull|Render|Texture|Sprite|Spawn' dump/all-classes.txt | grep -E '^net/minecraft/(client|world)' > dump/related-classes.txt || true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mc-dump
+          path: dump/
