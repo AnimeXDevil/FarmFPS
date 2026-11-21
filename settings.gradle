@@ -1,13 +1,8 @@
 pluginManagement {
 	repositories {
-		maven {
-			name = 'Fabric'
-			url = 'https://maven.fabricmc.net/'
-		}
+		maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
 		mavenCentral()
 		gradlePluginPortal()
 	}
 }
-
-// Should match your modid
-rootProject.name = 'farmfps'
+rootProject.name = 'farmfps-26.2'
