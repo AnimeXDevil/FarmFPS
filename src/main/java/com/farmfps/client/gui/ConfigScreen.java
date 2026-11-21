@@ -8,6 +8,9 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.text.Text;
+import net.minecraft.client.gui.tooltip.Tooltip;
+import net.minecraft.client.gui.widget.ClickableWidget;
+import com.farmfps.core.Tips;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -141,6 +144,16 @@ public class ConfigScreen extends Screen {
                 this.client.setScreen(new ConfigScreen(this.parent, (this.page + 1) % PAGES));
             }
         }).dimensions(right, y, colW, rowH).build());
+        for (var child : this.children()) {
+            if (child instanceof ClickableWidget w) {
+                String m = w.getMessage().getString();
+                int cut = m.indexOf(": ");
+                String tip = Tips.get(cut > 0 ? m.substring(0, cut) : m);
+                if (tip != null) {
+                    w.setTooltip(Tooltip.of(Text.literal(tip)));
+                }
+            }
+        }
     }
 
     private void cycle(int x, int y, int w, int h, String name, String[] names,

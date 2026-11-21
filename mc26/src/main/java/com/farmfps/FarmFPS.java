@@ -2,6 +2,7 @@ package com.farmfps;
 
 import com.farmfps.client.ClientTicker;
 import com.farmfps.client.HideManager;
+import com.farmfps.client.ScreenOpener;
 import com.farmfps.client.VisualLock;
 import com.farmfps.client.gui.ConfigOpener;
 import com.farmfps.core.EntityBudget;
@@ -46,12 +47,7 @@ public class FarmFPS implements ClientModInitializer {
                 .executes(ctx -> {
                     Minecraft mc = ctx.getSource().getClient();
                     mc.execute(() -> {
-                        net.minecraft.client.gui.screens.Screen s = ConfigOpener.open(null);
-                        if (s == null) {
-                            say(ctx, "The settings screen is not available in this build yet. Use commands such as /farmfps preset, /farmfps stats, /farmfps hide.");
-                        } else {
-                            ScreenOpener.show(mc, s);
-                        }
+                        ScreenOpener.show(mc, ConfigOpener.open(null));
                     });
                     return 1;
                 })
