@@ -81,9 +81,9 @@ public class PickerScreen extends Screen {
                 || b instanceof net.minecraft.world.level.block.AbstractFurnaceBlock
                 || b instanceof net.minecraft.world.level.block.BrewingStandBlock
                 || b instanceof net.minecraft.world.level.block.DecoratedPotBlock
-                || b instanceof net.minecraft.world.level.block.ChiseledBookshelfBlock
+                || BuiltInRegistries.BLOCK.getKey(b).getPath().equals("chiseled_bookshelf")
                 || com.farmfps.client.BlockIds.isCrafter(b)) {
-                out.add(BuiltInBuiltInRegistries.BLOCK.getKey(b).toString());
+                out.add(BuiltInRegistries.BLOCK.getKey(b).toString());
             }
         }
         out.sort(String::compareTo);
@@ -98,14 +98,14 @@ public class PickerScreen extends Screen {
         List<String> out = new ArrayList<>();
         if (items) {
             for (net.minecraft.world.item.Item i : BuiltInRegistries.ITEM) {
-                String id = BuiltInBuiltInRegistries.ITEM.getKey(i).toString();
+                String id = BuiltInRegistries.ITEM.getKey(i).toString();
                 if (!id.equals("minecraft:air")) {
                     out.add(id);
                 }
             }
         } else {
             for (net.minecraft.world.entity.EntityType<?> t : BuiltInRegistries.ENTITY_TYPE) {
-                String id = BuiltInBuiltInRegistries.ENTITY_TYPE.getKey(t).toString();
+                String id = BuiltInRegistries.ENTITY_TYPE.getKey(t).toString();
                 if (!id.equals("minecraft:player")) {
                     out.add(id);
                 }
