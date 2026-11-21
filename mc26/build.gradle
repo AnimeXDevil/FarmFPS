@@ -6,16 +6,49 @@ version = project.version
 group = project.maven_group
 base { archivesName = project.archives_base_name }
 
+def modmenuVersion = project.findProperty('modmenu_version')
+def clothVersion = project.findProperty('cloth_version')
+
+repositories {
+	maven { name = 'TerraformersMC'; url = 'https://maven.terraformersmc.com/' }
+	maven { name = 'Shedaniel'; url = 'https://maven.shedaniel.me/' }
+}
+
+sourceSets {
+	main {
+		java {
+			if (!modmenuVersion) { exclude 'com/farmfps/compat/ModMenuIntegration.java' }
+			if (!clothVersion) { exclude 'com/farmfps/compat/ClothScreen.java' }
+		}
+	}
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	if (modmenuVersion) {
+		compileOnly("com.terraformersmc:modmenu:${modmenuVersion}") { transitive = false }
+	}
+	if (clothVersion) {
+		compileOnly("me.shedaniel.cloth:cloth-config-fabric:${clothVersion}") { transitive = false }
+	}
 }
 
 processResources {
 	inputs.property "version", project.version
+	inputs.property "modmenuOn", modmenuVersion != null
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version
+	}
+	// Mod Menu entrypoint is added to the processed copy only when Mod Menu support is on.
+	doLast {
+		if (modmenuVersion) {
+			def f = new File(destinationDir, 'fabric.mod.json')
+			def json = new groovy.json.JsonSlurper().parse(f)
+			json.entrypoints.modmenu = ['com.farmfps.compat.ModMenuIntegration']
+			f.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+		}
 	}
 }
 

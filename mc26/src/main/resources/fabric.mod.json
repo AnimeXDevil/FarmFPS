@@ -9,6 +9,7 @@
   "environment": "client",
   "mixins": ["farmfps.mixins.json"],
   "entrypoints": { "client": ["com.farmfps.FarmFPS"] },
+  "suggests": { "cloth-config": "*", "modmenu": "*" },
   "depends": {
     "fabricloader": ">=0.19.3",
     "minecraft": "~26.2",

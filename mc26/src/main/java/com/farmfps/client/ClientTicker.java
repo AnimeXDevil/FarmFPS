@@ -4,6 +4,7 @@ import com.farmfps.core.EffectCounters;
 import com.farmfps.core.EntityBudget;
 import com.farmfps.core.FarmConfig;
 import com.farmfps.core.FarmDetector;
+import com.farmfps.core.FluidChurn;
 import com.farmfps.core.Stats;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
@@ -25,6 +26,7 @@ public final class ClientTicker {
     private static final int STATUS_INTERVAL_TICKS = 10;   // action bar refresh
     private static int scanTicks;
     private static int statusTicks;
+    private static int lockTicks;
     private static long lastStatsTotal;
     private static int flatHold;
     /** True while a farm is active (plus a 30 s hold so meshes are not built with mixed lighting). */
@@ -41,6 +43,7 @@ public final class ClientTicker {
 
     public static void onEndTick(Minecraft client) {
         FarmDetector.tick();
+        FluidChurn.tick();
         if (FarmDetector.activeCount() > 0) {
             flatHold = 600;
         } else if (flatHold > 0) {
@@ -53,15 +56,27 @@ public final class ClientTicker {
         if (world == null || player == null) {
             EntityBudget.reset();
             FarmDetector.clear();
+            VisualLock.clear();
+            FluidChurn.clear();
+            lockTicks = 0;
             scanTicks = 0;
             statusTicks = 0;
             return;
         }
 
         FarmConfig c = FarmConfig.INSTANCE;
+        boolean slowRefresh = c.enabled && (c.redstoneMode == 1 || c.freezeFluids);
+        if (!slowRefresh) {
+            VisualLock.refresh(world); // never leave skipped redraws behind
+        }
         if (!c.enabled) {
             EntityBudget.reset();
             return;
+        }
+
+        if (slowRefresh && ++lockTicks >= (c.redstoneMode == 1 ? c.redstoneFlushTicks : 40)) {
+            lockTicks = 0;
+            VisualLock.refresh(world);
         }
 
         if (++scanTicks >= SCAN_INTERVAL_TICKS) {
