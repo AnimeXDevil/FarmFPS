@@ -1,7 +1,7 @@
 {
   "required": false,
   "package": "com.farmfps.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "${mixin_java}",
   "client": [
     "AmbientOcclusionMixin",
     "CullFaceMixin",

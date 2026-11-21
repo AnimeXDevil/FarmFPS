@@ -1,7 +1,7 @@
 {
   "required": false,
   "package": "com.farmfps.mixin",
-  "compatibilityLevel": "JAVA_25",
+  "compatibilityLevel": "${mixin_java}",
   "injectors": {
     "defaultRequire": 0
   },

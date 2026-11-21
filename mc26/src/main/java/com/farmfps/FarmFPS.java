@@ -48,7 +48,7 @@ public class FarmFPS implements ClientModInitializer {
                     mc.execute(() -> {
                         net.minecraft.client.gui.screens.Screen s = ConfigOpener.open(null);
                         if (s == null) {
-                            say(ctx, "Install Cloth Config to get the settings screen. Commands such as /farmfps preset still work.");
+                            say(ctx, "The settings screen is not available in this build yet. Use commands such as /farmfps preset, /farmfps stats, /farmfps hide.");
                         } else {
                             mc.gui.setScreen(s);
                         }

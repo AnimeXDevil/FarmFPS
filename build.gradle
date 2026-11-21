@@ -1,70 +1,60 @@
+// Yarn-mapped build for Minecraft 1.20 - 1.21.x. The CI (release-all.yml) passes the exact versions
+// with -Pminecraft_version / -Pyarn_mappings / -Pfabric_api_version / -Pmodmenu_version / -Pjava_release.
 plugins {
 	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
 	id 'maven-publish'
 }
 
-// Optional Mod Menu integration. Set modmenu_version in gradle.properties to enable it.
 def modmenuVersion = project.findProperty('modmenu_version')
-def modmenuOn = modmenuVersion != null
-// Optional Cloth Config screen. Set cloth_version in gradle.properties to enable it.
-def clothVersion = project.findProperty('cloth_version')
+def modmenuOn = modmenuVersion != null && modmenuVersion.toString().trim() != ''
+def javaRelease = (project.findProperty('java_release') ?: '21').toString().toInteger()
 
 repositories {
 	maven {
 		name = 'TerraformersMC'
 		url = 'https://maven.terraformersmc.com/'
 	}
-	maven {
-		name = 'Shedaniel'
-		url = 'https://maven.shedaniel.me/'
-	}
 }
 
 sourceSets {
 	main {
 		java {
-			if (!modmenuVersion) {
-				exclude 'com/farmfps/compat/ModMenuIntegration.java'
-			}
-			// Leftover from Update 18 (unpack never deletes files); no longer used.
+			// Leftovers from earlier updates (unpack never deletes files) and optional parts.
+			exclude 'com/farmfps/compat/ClothScreen.java'
 			exclude 'com/farmfps/compat/YaclScreen.java'
-			if (!clothVersion) {
-				exclude 'com/farmfps/compat/ClothScreen.java'
+			if (!modmenuOn) {
+				exclude 'com/farmfps/compat/ModMenuIntegration.java'
 			}
 		}
 	}
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	if (modmenuVersion) {
-		modCompileOnly "com.terraformersmc:modmenu:${modmenuVersion}"
-	}
-	if (clothVersion) {
-		modCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${clothVersion}") {
-			exclude group: 'net.fabricmc.fabric-api'
-		}
+	if (modmenuOn) {
+		modCompileOnly("com.terraformersmc:modmenu:${modmenuVersion}") { transitive = false }
 	}
 }
 
 processResources {
-	def modVersion = project.version
-	inputs.property "version", modVersion
+	def props = [
+		version     : project.version,
+		mc_dep      : project.findProperty('mc_dep') ?: project.minecraft_version,
+		java_min    : javaRelease.toString(),
+		mixin_java  : "JAVA_${javaRelease}".toString(),
+	]
+	inputs.properties props
 	inputs.property "modmenuOn", modmenuOn
 
-	filesMatching("fabric.mod.json") {
-		expand "version": modVersion
+	filesMatching(["fabric.mod.json", "farmfps.mixins.json"]) {
+		expand props
 	}
 
-	// The source fabric.mod.json must stay valid JSON, so the Mod Menu entrypoint
-	// is added to the processed copy only when Mod Menu support is enabled.
+	// The Mod Menu entrypoint is added to the processed copy only when Mod Menu support is built in.
 	doLast {
 		if (modmenuOn) {
 			def f = new File(destinationDir, 'fabric.mod.json')
@@ -76,41 +66,19 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = javaRelease
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
 	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.toVersion(javaRelease)
+	targetCompatibility = JavaVersion.toVersion(javaRelease)
 }
 
 jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
-
 	from("LICENSE") {
-		rename { "${it}_$projectName"}
-	}
-}
-
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
+		rename { "${it}_$projectName" }
 	}
 }
