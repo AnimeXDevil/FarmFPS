@@ -1,7 +1,7 @@
 # One workflow, all Minecraft versions.
 #  - builds FarmFPS once per Minecraft version (matrix), resolving Fabric Loader / Yarn / Fabric API /
 #    Mod Menu versions automatically for each one
-#  - consolidates all build logs and GUI dump .txt files into ONE workflow artifact (build-logs-and-gui-dump)
+#  - consolidates failed build logs and GUI dump .txt files into ONE workflow artifact (build-logs-and-gui-dump)
 #  - publishes all jars that built successfully into ONE release (tag v<version>, marked Latest)
 # Run it from Actions > release-all > Run workflow. "versions" can be "all" or a comma list such as 26.3,1.21.11.
 name: release-all
@@ -128,6 +128,7 @@ jobs:
             tail -80 "out/gradle-$MC.txt" >> "$LOG"
             exit 1
           fi
+          rm -f "out/gradle-$MC.txt"
           JAR=$(ls "$DIR"/build/libs/*.jar | grep -v -- '-sources' | grep -v -- '-dev' | head -n 1)
           cp "$JAR" "out/farmfps-1.0.0-mc$MC.jar"
           echo "BUILD OK -> farmfps-1.0.0-mc$MC.jar" | tee -a "$LOG"
@@ -190,41 +191,58 @@ jobs:
         with:
           path: results
           merge-multiple: true
-      - name: bundle logs, clean intermediate artifacts, and publish release jars
+      - name: bundle failed logs, clean intermediate artifacts, and publish release jars
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -uo pipefail
-          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2)
+          VERSION=$(grep '^version=' gradle.properties | cut -d= -f2 || true)
+          mkdir -p results
           ls -la results || true
+
+          rm -rf txt-bundle
+          mkdir -p txt-bundle/failed-builds txt-bundle/gui-dump
+
           {
             echo "FarmFPS build log - $(date -u +%Y-%m-%dT%H:%M:%SZ) - commit ${GITHUB_SHA::7}"
             echo
             echo "SUMMARY"
-            for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r); do
+            for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r || true); do
               mc=$(basename "$f" .txt); mc=${mc#log-}
-              if grep -q '^BUILD OK' "$f"; then echo "  OK      $mc"; else echo "  FAILED  $mc"; fi
+              if grep -q '^BUILD OK' "$f"; then
+                echo "  OK      $mc"
+              else
+                echo "  FAILED  $mc"
+              fi
             done
             echo
-            for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r); do cat "$f"; echo; done
-          } > build-log.txt
-          cat build-log.txt | head -60
+            for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r || true); do
+              if ! grep -q '^BUILD OK' "$f"; then
+                cat "$f"
+                echo
+              fi
+            done
+          } > txt-bundle/build-log.txt
+          head -n 60 txt-bundle/build-log.txt
 
-          # stage all .txt build logs and GUI dump files into one folder for a single workflow artifact
-          rm -rf txt-bundle
-          mkdir -p txt-bundle/build-logs txt-bundle/gui-dump
-          cp build-log.txt txt-bundle/
-          find results -maxdepth 1 -type f \( -name 'log-*.txt' -o -name 'gradle-*.txt' \) -exec cp {} txt-bundle/build-logs/ \;
+          # stage only failed build logs and GUI dump files into one folder for a single workflow artifact
+          for f in $(ls results/log-*.txt 2>/dev/null | sort -V -r || true); do
+            if ! grep -q '^BUILD OK' "$f"; then
+              mc=$(basename "$f" .txt); mc=${mc#log-}
+              cp "$f" txt-bundle/failed-builds/
+              [ -f "results/gradle-$mc.txt" ] && cp "results/gradle-$mc.txt" txt-bundle/failed-builds/ || true
+            fi
+          done
           find results -maxdepth 1 -type f \( -name 'gui-*.txt' -o -name 'all-classes-*.txt' \) -exec cp {} txt-bundle/gui-dump/ \;
 
-          # remove the per-job intermediate artifacts so only one combined artifact appears on the run page
+          # remove all per-job intermediate artifacts so only one combined artifact appears on the run page
           for id in $(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --jq '.artifacts[].id' 2>/dev/null || true); do
             gh api -X DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/$id" >/dev/null 2>&1 || true
           done
 
           # publish only the release jars (unzipped) when publish is enabled
-          if [ "${{ inputs.publish }}" = "true" ]; then
+          if [ "${{ inputs.publish }}" = "true" ] && [ -n "$VERSION" ]; then
             JARS=$(ls results/farmfps-*.jar 2>/dev/null | sort -V -r || true)
             if [ -n "$JARS" ]; then
               TAG="v${VERSION}"
@@ -239,10 +257,11 @@ jobs:
               echo "No jar was built, nothing to release."
             fi
           fi
-      - name: upload single combined logs and GUI dump artifact
+      - name: upload single combined failed-logs and GUI dump artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: build-logs-and-gui-dump
           path: txt-bundle/
           if-no-files-found: warn
+          
