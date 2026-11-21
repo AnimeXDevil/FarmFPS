@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "com.farmfps.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "injectors": { "defaultRequire": 0 },
+  "client": [
+    "BlockEntityCullMixin",
+    "EntityCullMixin",
+    "ItemSpawnMixin",
+    "ItemTickMixin",
+    "ItemWorldMixin",
+    "ParticleThrottleMixin"
+  ]
+}

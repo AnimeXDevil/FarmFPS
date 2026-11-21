@@ -1,0 +1,120 @@
+package com.farmfps.client;
+
+import com.farmfps.core.EffectCounters;
+import com.farmfps.core.EntityBudget;
+import com.farmfps.core.FarmConfig;
+import com.farmfps.core.FarmDetector;
+import com.farmfps.core.Stats;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.item.ItemEntity;
+
+import java.util.ArrayList;
+
+/**
+ * Per-tick glue between Minecraft and the version-independent core.
+ * This runs 20 times a second, not per frame, so the entity scan may use a normal iterator.
+ * The render-path mixins only read the primitive results.
+ */
+public final class ClientTicker {
+    private static final int SCAN_INTERVAL_TICKS = 10;     // 2 scans per second
+    private static final int STATUS_INTERVAL_TICKS = 10;   // action bar refresh
+    private static int scanTicks;
+    private static int flatHold;
+    /** True while a farm is active (plus a 30 s hold so meshes are not built with mixed lighting). */
+    public static boolean flatLight;
+    private static final ArrayList<Entity> DISCARD = new ArrayList<>(512);
+    private static final int MAX_DISCARDS_PER_SCAN = 300;
+
+    private ClientTicker() {
+    }
+
+    public static void onStartTick(Minecraft client) {
+        EffectCounters.resetTick();
+    }
+
+    public static void onEndTick(Minecraft client) {
+        FarmDetector.tick();
+        if (FarmDetector.activeCount() > 0) {
+            flatHold = 600;
+        } else if (flatHold > 0) {
+            flatHold--;
+        }
+        flatLight = flatHold > 0;
+
+        ClientLevel world = client.level;
+        LocalPlayer player = client.player;
+        if (world == null || player == null) {
+            EntityBudget.reset();
+            FarmDetector.clear();
+            scanTicks = 0;
+            return;
+        }
+
+        FarmConfig c = FarmConfig.INSTANCE;
+        if (!c.enabled) {
+            EntityBudget.reset();
+            return;
+        }
+
+        if (++scanTicks >= SCAN_INTERVAL_TICKS) {
+            scanTicks = 0;
+            scan(world, player, c);
+        }
+
+    }
+
+    private static void scan(ClientLevel world, LocalPlayer player, FarmConfig c) {
+        double r = c.cullRadius;
+        double r2 = r * r;
+        int items = 0;
+        int xp = 0;
+        for (Entity e : world.entitiesForRendering()) {
+            if (e instanceof ItemEntity) {
+                if (e.distanceToSqr(player) <= r2) {
+                    items++;
+                }
+            } else if (e instanceof ExperienceOrb) {
+                if (e.distanceToSqr(player) <= r2) {
+                    xp++;
+                }
+            }
+        }
+        EntityBudget.update(items, xp, player.getX(), player.getY(), player.getZ());
+        if (c.enabled && c.capItems && c.aggressiveItems && items > c.maxItems) {
+            discardExcessItems(world, r2, player);
+        }
+    }
+
+    /**
+     * Items that already exist on the client beyond the cap (they arrived before it was reached)
+     * are removed from the client world. The server still has them: hoppers and pickups work, and
+     * packets about an item the client no longer has are ignored. Runs a few times a second, so
+     * allocation here is fine; the batch size is limited to avoid a hitch.
+     */
+    private static void discardExcessItems(ClientLevel world, double r2, LocalPlayer player) {
+        int keep = EntityBudget.itemKeep;
+        if (keep >= EntityBudget.FULL) {
+            return;
+        }
+        DISCARD.clear();
+        for (Entity e : world.entitiesForRendering()) {
+            if (e instanceof ItemEntity && e.distanceToSqr(player) <= r2
+                && EntityBudget.isHidden(e.getId(), keep)) {
+                DISCARD.add(e);
+                if (DISCARD.size() >= MAX_DISCARDS_PER_SCAN) {
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < DISCARD.size(); i++) {
+            DISCARD.get(i).discard();
+        }
+        Stats.itemsDiscarded += DISCARD.size();
+        DISCARD.clear();
+    }
+
+}
