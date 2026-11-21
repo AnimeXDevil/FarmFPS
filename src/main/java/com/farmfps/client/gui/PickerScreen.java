@@ -80,7 +80,7 @@ public class PickerScreen extends Screen {
                 || b instanceof net.minecraft.block.BrewingStandBlock
                 || b instanceof net.minecraft.block.DecoratedPotBlock
                 || b instanceof net.minecraft.block.ChiseledBookshelfBlock
-                || b instanceof net.minecraft.block.CrafterBlock) {
+                || com.farmfps.client.BlockIds.isCrafter(b)) {
                 out.add(Registries.BLOCK.getId(b).toString());
             }
         }

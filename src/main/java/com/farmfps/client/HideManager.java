@@ -6,7 +6,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ButtonBlock;
 import net.minecraft.block.ComparatorBlock;
-import net.minecraft.block.CrafterBlock;
 import net.minecraft.block.DaylightDetectorBlock;
 import net.minecraft.block.DetectorRailBlock;
 import net.minecraft.block.DispenserBlock;
@@ -332,17 +331,10 @@ public final class HideManager {
             || b instanceof DaylightDetectorBlock
             || b instanceof PoweredRailBlock
             || b instanceof DetectorRailBlock
-            || b instanceof CrafterBlock
+            || BlockIds.isCrafter(b)
             || b == Blocks.IRON_DOOR
             || b == Blocks.IRON_TRAPDOOR
             || b == Blocks.REDSTONE_BLOCK
-            || b == Blocks.COPPER_BULB
-            || b == Blocks.EXPOSED_COPPER_BULB
-            || b == Blocks.WEATHERED_COPPER_BULB
-            || b == Blocks.OXIDIZED_COPPER_BULB
-            || b == Blocks.WAXED_COPPER_BULB
-            || b == Blocks.WAXED_EXPOSED_COPPER_BULB
-            || b == Blocks.WAXED_WEATHERED_COPPER_BULB
-            || b == Blocks.WAXED_OXIDIZED_COPPER_BULB;
+            || BlockIds.isCopperBulb(b);
     }
 }

@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.HopperBlock;
 import net.minecraft.world.level.block.NoteBlock;
 import net.minecraft.world.level.block.ObserverBlock;
 import net.minecraft.world.level.block.PoweredRailBlock;
-import net.minecraft.world.level.block.RedStoneWireBlock;
 import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.RedstoneTorchBlock;
 import net.minecraft.world.level.block.RepeaterBlock;
@@ -174,7 +173,7 @@ public final class VisualLock {
      */
     private static boolean isVisualOnly(Block b) {
         return b instanceof ObserverBlock
-            || b instanceof RedStoneWireBlock
+            || BlockIds.isRedstoneWire(b)
             || b instanceof RepeaterBlock
             || b instanceof ComparatorBlock
             || b instanceof RedstoneLampBlock

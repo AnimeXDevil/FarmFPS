@@ -25,7 +25,7 @@
     "ParticleThrottleMixin",
     "RenderTypeMixin",
     "PistonCullMixin",
-    "SoundThrottleMixin"
+    "${sound_mixin}"
   ],
   "injectors": {
     "defaultRequire": 0

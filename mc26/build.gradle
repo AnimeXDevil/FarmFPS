@@ -12,6 +12,7 @@ def modmenuVersion = project.findProperty('modmenu_version')
 def modmenuOn = modmenuVersion != null && modmenuVersion.toString().trim() != ''
 
 repositories {
+	mavenCentral()
 	maven { name = 'TerraformersMC'; url = 'https://maven.terraformersmc.com/' }
 }
 
@@ -39,6 +40,7 @@ processResources {
 		mc_dep    : project.findProperty('mc_dep') ?: project.minecraft_version,
 		java_min  : '25',
 		mixin_java: 'JAVA_25',
+		sound_mixin: 'SoundThrottleMixin',
 	]
 	inputs.properties props
 	inputs.property "modmenuOn", modmenuOn

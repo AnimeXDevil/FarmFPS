@@ -186,13 +186,6 @@ public final class VisualLock {
             || b instanceof DispenserBlock
             || b instanceof HopperBlock
             || b instanceof NoteBlock
-            || b == Blocks.COPPER_BULB
-            || b == Blocks.EXPOSED_COPPER_BULB
-            || b == Blocks.WEATHERED_COPPER_BULB
-            || b == Blocks.OXIDIZED_COPPER_BULB
-            || b == Blocks.WAXED_COPPER_BULB
-            || b == Blocks.WAXED_EXPOSED_COPPER_BULB
-            || b == Blocks.WAXED_WEATHERED_COPPER_BULB
-            || b == Blocks.WAXED_OXIDIZED_COPPER_BULB;
+            || BlockIds.isCopperBulb(b);
     }
 }

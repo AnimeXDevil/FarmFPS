@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.BasePressurePlateBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.ComparatorBlock;
-import net.minecraft.world.level.block.CrafterBlock;
 import net.minecraft.world.level.block.DaylightDetectorBlock;
 import net.minecraft.world.level.block.DetectorRailBlock;
 import net.minecraft.world.level.block.DispenserBlock;
@@ -21,7 +20,6 @@ import net.minecraft.world.level.block.HopperBlock;
 import net.minecraft.world.level.block.NoteBlock;
 import net.minecraft.world.level.block.ObserverBlock;
 import net.minecraft.world.level.block.PoweredRailBlock;
-import net.minecraft.world.level.block.RedStoneWireBlock;
 import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.RedstoneTorchBlock;
 import net.minecraft.world.level.block.RedstoneWallTorchBlock;
@@ -334,7 +332,7 @@ public final class HideManager {
             || b instanceof ObserverBlock
             || b instanceof DispenserBlock
             || b instanceof HopperBlock
-            || b instanceof RedStoneWireBlock
+            || BlockIds.isRedstoneWire(b)
             || b instanceof RepeaterBlock
             || b instanceof ComparatorBlock
             || b instanceof RedstoneTorchBlock
@@ -350,7 +348,7 @@ public final class HideManager {
             || b instanceof DaylightDetectorBlock
             || b instanceof PoweredRailBlock
             || b instanceof DetectorRailBlock
-            || b instanceof CrafterBlock
+            || BlockIds.isCrafter(b)
             || isIdBlock(b);
     }
 }

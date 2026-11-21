@@ -7,9 +7,13 @@ plugins {
 
 def modmenuVersion = project.findProperty('modmenu_version')
 def modmenuOn = modmenuVersion != null && modmenuVersion.toString().trim() != ''
+// SoundManager.play returned void up to 1.21.5; from 1.21.6 it returns a PlayResult.
+def mcParts = project.minecraft_version.toString().tokenize('.')*.toInteger()
+def legacySound = mcParts[0] == 1 && (mcParts[1] < 21 || (mcParts[1] == 21 && (mcParts.size() > 2 ? mcParts[2] : 0) < 6))
 def javaRelease = (project.findProperty('java_release') ?: '21').toString().toInteger()
 
 repositories {
+	mavenCentral()
 	maven {
 		name = 'TerraformersMC'
 		url = 'https://maven.terraformersmc.com/'
@@ -22,6 +26,7 @@ sourceSets {
 			// Leftovers from earlier updates (unpack never deletes files) and optional parts.
 			exclude 'com/farmfps/compat/ClothScreen.java'
 			exclude 'com/farmfps/compat/YaclScreen.java'
+			exclude(legacySound ? 'com/farmfps/mixin/SoundThrottleMixin.java' : 'com/farmfps/mixin/SoundThrottleLegacyMixin.java')
 			if (!modmenuOn) {
 				exclude 'com/farmfps/compat/ModMenuIntegration.java'
 			}
@@ -46,6 +51,7 @@ processResources {
 		mc_dep      : project.findProperty('mc_dep') ?: project.minecraft_version,
 		java_min    : javaRelease.toString(),
 		mixin_java  : "JAVA_${javaRelease}".toString(),
+		sound_mixin : legacySound ? 'SoundThrottleLegacyMixin' : 'SoundThrottleMixin',
 	]
 	inputs.properties props
 	inputs.property "modmenuOn", modmenuOn

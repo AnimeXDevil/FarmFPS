@@ -50,7 +50,7 @@ public class FarmFPS implements ClientModInitializer {
                         if (s == null) {
                             say(ctx, "The settings screen is not available in this build yet. Use commands such as /farmfps preset, /farmfps stats, /farmfps hide.");
                         } else {
-                            mc.gui.setScreen(s);
+                            ScreenOpener.show(mc, s);
                         }
                     });
                     return 1;
